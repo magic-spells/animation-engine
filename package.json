@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "description": "Declarative animation sequencing engine — chainable scenes with easing, physics, staggers, loops and randomness for the magic-spells ecosystem",
   "type": "module",
-  "main": "dist/animation-engine.min.js",
-  "module": "dist/animation-engine.esm.js",
-  "types": "dist/animation-engine.d.ts",
+  "main": "./dist/animation-engine.esm.js",
+  "module": "./dist/animation-engine.esm.js",
+  "types": "./dist/animation-engine.d.ts",
+  "unpkg": "./dist/animation-engine.min.js",
+  "jsdelivr": "./dist/animation-engine.min.js",
   "exports": {
     ".": {
       "types": "./dist/animation-engine.d.ts",
       "import": "./dist/animation-engine.esm.js",
-      "require": "./dist/animation-engine.min.js"
+      "default": "./dist/animation-engine.esm.js"
     }
   },
   "files": [

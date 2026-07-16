@@ -10,11 +10,7 @@
  */
 
 import PhysicsEngine from '@magic-spells/physics-engine';
-import { activeElementTweens, recordStyles } from './state.js';
-
-// The spring travels a large fixed distance so `change.progress` has good
-// resolution; progress is distance-normalised, so the exact number is arbitrary.
-const TRAVEL = 1000;
+import { activeElementTweens, claimElement, recordStyles } from './state.js';
 
 export default class PhysicsTween {
   /**
@@ -45,13 +41,13 @@ export default class PhysicsTween {
    * @returns {Promise<void>}
    */
   start() {
-    const prev = activeElementTweens.get(this.el);
-    if (prev && prev !== this) prev.cancel();
+    if (activeElementTweens.get(this.el) !== this) claimElement(this.el);
     activeElementTweens.set(this.el, this);
 
     // No rAF (e.g. Node) — springs can't run; snap to the settled end state.
     if (typeof requestAnimationFrame !== 'function') {
-      this._apply(1);
+      this._lastStyles = this.endStyles;
+      Object.assign(this.el.style, this.endStyles);
       this._finish();
       return this.promise;
     }
@@ -69,9 +65,10 @@ export default class PhysicsTween {
 
     // A superseded animateTo resolves without a 'complete' event, so we rely on
     // the promise, never the event, to know we're finished.
-    this.engine.animateTo(0, TRAVEL, 0).then(() => {
+    this.engine.animateTo(0, 1, 0).then(() => {
       if (this._done) return;
-      this._apply(1);
+      this._lastStyles = this.endStyles;
+      Object.assign(this.el.style, this.endStyles);
       this._finish();
     });
 

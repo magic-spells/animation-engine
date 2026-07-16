@@ -15,7 +15,7 @@ import { resolveEasing } from './easings.js';
 import { resolveValue, resolveStyles, resolveKeyframes } from './values.js';
 import { fillSparseKeyframes } from './keyframes.js';
 import { resolveTargets, resolveFromState } from './dom.js';
-import { recordStyles } from './state.js';
+import { claimElement, recordStyles } from './state.js';
 import Tween from './tween.js';
 import PhysicsTween from './physics-tween.js';
 
@@ -92,25 +92,32 @@ function makeBuilder(steps) {
  */
 function staggerOrder(n, from) {
   const idx = Array.from({ length: n }, (_, i) => i);
+  let ranks;
 
-  if (from === undefined || from === 'start') return idx;
-  if (from === 'end') return idx.map((i) => n - 1 - i);
-
-  const center = (n - 1) / 2;
-  if (from === 'center') return idx.map((i) => Math.abs(i - center));
-  if (from === 'edges') return idx.map((i) => center - Math.abs(i - center));
-  if (typeof from === 'number') return idx.map((i) => Math.abs(i - from));
-
-  if (from === 'random') {
-    const ranks = [...idx];
+  if (from === undefined || from === 'start') {
+    ranks = idx;
+  } else if (from === 'end') {
+    ranks = idx.map((i) => n - 1 - i);
+  } else if (from === 'center') {
+    const center = (n - 1) / 2;
+    ranks = idx.map((i) => Math.abs(i - center));
+  } else if (from === 'edges') {
+    const center = (n - 1) / 2;
+    ranks = idx.map((i) => center - Math.abs(i - center));
+  } else if (typeof from === 'number') {
+    ranks = idx.map((i) => Math.abs(i - from));
+  } else if (from === 'random') {
+    ranks = [...idx];
     for (let i = ranks.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [ranks[i], ranks[j]] = [ranks[j], ranks[i]];
     }
-    return ranks;
+  } else {
+    ranks = idx;
   }
 
-  return idx;
+  const min = Math.min(...ranks);
+  return min > 0 ? ranks.map((rank) => rank - min) : ranks;
 }
 
 export default class Scene extends EventEmitter {
@@ -145,12 +152,8 @@ export default class Scene extends EventEmitter {
 
     // Playback state.
     this._playing = false;
-    this._settled = false;
-    this._stopped = false;
-    this._finished = false;
+    this._current = null;
     this._playPromise = null;
-    this._resolvePlay = null;
-    this._active = new Set(); // cancelable handles: tweens + waits
   }
 
   // ---- Builder methods (delegate, return this for chaining) ----
@@ -218,25 +221,30 @@ export default class Scene extends EventEmitter {
   /**
    * Play the scene. Returns a promise resolving when it completes, is stopped,
    * or is finished. Calling while playing returns the in-flight promise; calling
-   * after completion restarts from the beginning.
+   * after completion restarts from the beginning. Rejects if a `.call()` callback,
+   * lazy value, or lifecycle callback throws (or returns a rejected promise); the
+   * scene is safe to play again afterwards.
    * @returns {Promise<void>}
    */
   play() {
-    if (this._playing) return this._playPromise;
+    if (this._current && !this._current.settled) return this._playPromise;
 
+    const run = {
+      stopped: false,
+      finished: false,
+      settled: false,
+      resolve: null,
+      reject: null,
+      active: new Set(),
+    };
+    this._current = run;
     this._playing = true;
-    this._settled = false;
-    this._stopped = false;
-    this._finished = false;
-    this._playPromise = new Promise((resolve) => {
-      this._resolvePlay = resolve;
+    this._playPromise = new Promise((resolve, reject) => {
+      run.resolve = resolve;
+      run.reject = reject;
     });
 
-    if (this._respectReducedMotion && prefersReducedMotion()) {
-      this._runReducedMotion();
-    } else {
-      this._run();
-    }
+    this._start(run);
 
     return this._playPromise;
   }
@@ -246,10 +254,11 @@ export default class Scene extends EventEmitter {
    * emit 'stop'. Remaining steps do not run.
    */
   stop() {
-    if (!this._playing || this._settled) return;
-    this._stopped = true;
-    this._cancelActive();
-    this._settle('stop');
+    const run = this._current;
+    if (!run || run.settled) return;
+    run.stopped = true;
+    this._cancelActive(run);
+    this._settle(run, 'stop');
   }
 
   /**
@@ -258,34 +267,47 @@ export default class Scene extends EventEmitter {
    * visual end states only).
    */
   finish() {
-    if (!this._playing || this._settled) return;
-    this._finished = true;
-    this._cancelActive();
+    const run = this._current;
+    if (!run || run.settled) return;
+    run.finished = true;
+    this._cancelActive(run);
     this._applyEndStates();
-    this._settle('complete');
+    this._settle(run, 'complete');
   }
 
   // ---- Scheduler ----
 
-  async _run() {
+  _start(run) {
+    this._execute(run).then(
+      () => this._settle(run, 'complete'),
+      (err) => this._fail(run, err)
+    );
+  }
+
+  async _execute(run) {
     this.emit('begin');
     if (this._onBegin) this._onBegin();
+
+    if (this._respectReducedMotion && prefersReducedMotion()) {
+      this._applyEndStates();
+      return;
+    }
 
     const total = this._loop === true ? Infinity : typeof this._loop === 'number' ? this._loop : 1;
 
     for (let i = 0; i < total; i++) {
-      if (this._stopped || this._finished) break;
+      if (run.stopped || run.finished) break;
 
       const reversed = this._alternate && i % 2 === 1;
       const steps = reversed ? [...this._steps].reverse() : this._steps;
 
       for (const step of steps) {
-        if (this._stopped || this._finished) break;
-        await this._runStep(step, reversed);
-        if (this._stopped || this._finished) break;
+        if (run.stopped || run.finished) break;
+        await this._runStep(step, reversed, run);
+        if (run.stopped || run.finished) break;
       }
 
-      if (this._stopped || this._finished) break;
+      if (run.stopped || run.finished) break;
 
       const hasMore = i < total - 1;
       if (hasMore) {
@@ -296,32 +318,29 @@ export default class Scene extends EventEmitter {
         if (this._onLoop) this._onLoop(i + 1);
 
         if (this._loopDelay > 0) {
-          await this._scaledWait(this._loopDelay).promise;
-          if (this._stopped || this._finished) break;
+          await this._scaledWait(this._loopDelay, run).promise;
+          if (run.stopped || run.finished) break;
         }
+
+        // Yield a real task each iteration so zero-cost infinite loops can't
+        // starve the event loop (empty scenes, selectors matching nothing).
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (run.stopped || run.finished) break;
       }
     }
-
-    this._settle('complete');
-  }
-
-  _runReducedMotion() {
-    this.emit('begin');
-    if (this._onBegin) this._onBegin();
-    this._applyEndStates();
-    this._settle('complete');
   }
 
   /**
    * Run a single step to completion.
    * @param {object} step
    * @param {boolean} reversed
+   * @param {object} run
    * @returns {Promise<void>}
    */
-  async _runStep(step, reversed) {
+  async _runStep(step, reversed, run) {
     switch (step.type) {
       case 'wait':
-        await this._scaledWait(resolveValue(step.ms) || 0).promise;
+        await this._scaledWait(resolveValue(step.ms) || 0, run).promise;
         return;
 
       case 'set':
@@ -338,15 +357,15 @@ export default class Scene extends EventEmitter {
       case 'from':
       case 'fromTo':
       case 'frames':
-        await this._runTween(step, reversed);
+        await this._runTween(step, reversed, run);
         return;
 
       case 'parallel':
-        await Promise.all(step.substeps.map((s) => this._runStep(s, reversed)));
+        await Promise.all(step.substeps.map((s) => this._runStep(s, reversed, run)));
         return;
 
       case 'stagger':
-        await this._runStagger(step, reversed);
+        await this._runStagger(step, reversed, run);
         return;
     }
   }
@@ -354,12 +373,13 @@ export default class Scene extends EventEmitter {
   _applySet(step) {
     const styles = resolveStyles(step.styles);
     for (const el of resolveTargets(step.target)) {
+      claimElement(el);
       Object.assign(el.style, styles);
       recordStyles(el, styles);
     }
   }
 
-  async _runTween(step, reversed) {
+  async _runTween(step, reversed, run) {
     const els = resolveTargets(step.target);
     if (els.length === 0) return;
 
@@ -375,11 +395,12 @@ export default class Scene extends EventEmitter {
     const resolved = this._resolveStepValues(step);
 
     if (delay > 0) {
-      await this._scaledWait(delay).promise;
-      if (this._stopped || this._finished) return;
+      await this._scaledWait(delay, run).promise;
+      if (run.stopped || run.finished) return;
     }
 
     const proms = els.map((el) => {
+      claimElement(el);
       const { fe, endStyles } = this._buildFrameEngine(step, el, reversed, resolved);
       const tween = isPhysics
         ? new PhysicsTween({ el, frameEngine: fe, endStyles, physics: opts.physics })
@@ -392,14 +413,14 @@ export default class Scene extends EventEmitter {
             timeScale: () => this._timeScale,
           });
       const handle = { cancel: () => tween.cancel() };
-      this._active.add(handle);
-      return tween.start().then(() => this._active.delete(handle));
+      run.active.add(handle);
+      return tween.start().then(() => run.active.delete(handle));
     });
 
     await Promise.all(proms);
   }
 
-  async _runStagger(step, reversed) {
+  async _runStagger(step, reversed, run) {
     const els = resolveTargets(step.targets);
     if (els.length === 0) return;
 
@@ -408,11 +429,13 @@ export default class Scene extends EventEmitter {
     const jitter = so.jitter || 0;
     const order = staggerOrder(els.length, so.from);
 
-    const proms = els.map((el, i) => this._runStaggerItem(step, el, i, order[i], interval, jitter, reversed));
+    const proms = els.map((el, i) =>
+      this._runStaggerItem(step, el, i, order[i], interval, jitter, reversed, run)
+    );
     await Promise.all(proms);
   }
 
-  async _runStaggerItem(step, el, i, orderRank, interval, jitter, reversed) {
+  async _runStaggerItem(step, el, i, orderRank, interval, jitter, reversed, run) {
     const cfg = typeof step.config === 'function' ? step.config(el, i) : { ...step.config };
 
     let delay = orderRank * interval + (resolveValue(cfg.delay) || 0);
@@ -420,8 +443,8 @@ export default class Scene extends EventEmitter {
     if (delay < 0) delay = 0;
 
     if (delay > 0) {
-      await this._scaledWait(delay).promise;
-      if (this._stopped || this._finished) return;
+      await this._scaledWait(delay, run).promise;
+      if (run.stopped || run.finished) return;
     }
 
     const isPhysics = !!cfg.physics;
@@ -430,6 +453,7 @@ export default class Scene extends EventEmitter {
       : resolveValue(cfg.duration) ?? resolveValue(this._defaults.duration) ?? DEFAULT_DURATION;
     const easing = resolveEasing(cfg.easing ?? this._defaults.easing ?? DEFAULT_EASING);
 
+    claimElement(el);
     const { fe, endStyles } = this._buildFrameEngineFromConfig(cfg, el, reversed);
     const tween = isPhysics
       ? new PhysicsTween({ el, frameEngine: fe, endStyles, physics: cfg.physics })
@@ -443,9 +467,9 @@ export default class Scene extends EventEmitter {
         });
 
     const handle = { cancel: () => tween.cancel() };
-    this._active.add(handle);
+    run.active.add(handle);
     await tween.start();
-    this._active.delete(handle);
+    run.active.delete(handle);
   }
 
   // ---- FrameEngine construction ----
@@ -552,6 +576,7 @@ export default class Scene extends EventEmitter {
       case 'frames': {
         const resolved = this._resolveStepValues(step);
         for (const el of resolveTargets(step.target)) {
+          claimElement(el);
           const { endStyles } = this._buildFrameEngine(step, el, false, resolved);
           Object.assign(el.style, endStyles);
           recordStyles(el, endStyles);
@@ -567,6 +592,7 @@ export default class Scene extends EventEmitter {
         const els = resolveTargets(step.targets);
         els.forEach((el, i) => {
           const cfg = typeof step.config === 'function' ? step.config(el, i) : { ...step.config };
+          claimElement(el);
           const { endStyles } = this._buildFrameEngineFromConfig(cfg, el, false);
           Object.assign(el.style, endStyles);
           recordStyles(el, endStyles);
@@ -583,9 +609,10 @@ export default class Scene extends EventEmitter {
   /**
    * A cancelable, scene-timeScale-aware wait driven by the shared ticker.
    * @param {number} ms
+   * @param {object} run
    * @returns {{ promise: Promise<void>, cancel: () => void }}
    */
-  _scaledWait(ms) {
+  _scaledWait(ms, run) {
     let acc = 0;
     let done = false;
     let resolveFn;
@@ -597,7 +624,7 @@ export default class Scene extends EventEmitter {
       if (done) return;
       done = true;
       ticker.unsubscribe(onTick);
-      this._active.delete(handle);
+      run.active.delete(handle);
       resolveFn();
     };
 
@@ -608,7 +635,7 @@ export default class Scene extends EventEmitter {
     };
 
     const handle = { cancel: finish };
-    this._active.add(handle);
+    run.active.add(handle);
 
     if (ms <= 0) {
       finish();
@@ -619,27 +646,44 @@ export default class Scene extends EventEmitter {
     return { promise, cancel: finish };
   }
 
-  _cancelActive() {
-    const handles = [...this._active];
-    this._active.clear();
+  _cancelActive(run) {
+    const handles = [...run.active];
+    run.active.clear();
     for (const h of handles) h.cancel();
   }
 
-  _settle(kind) {
-    if (this._settled) return;
-    this._settled = true;
-    this._playing = false;
-
-    if (kind === 'complete') {
-      this.emit('complete');
-      if (this._onComplete) this._onComplete();
-    } else if (kind === 'stop') {
-      this.emit('stop');
+  _settle(run, kind) {
+    if (run.settled) return;
+    run.settled = true;
+    if (this._current === run) {
+      this._current = null;
+      this._playing = false;
     }
+    const resolve = run.resolve;
+    try {
+      if (kind === 'complete') {
+        this.emit('complete');
+        if (this._onComplete) this._onComplete();
+      } else if (kind === 'stop') {
+        this.emit('stop');
+      }
+    } finally {
+      resolve();
+    }
+  }
 
-    const resolve = this._resolvePlay;
-    this._resolvePlay = null;
-    if (resolve) resolve();
+  _fail(run, err) {
+    if (run.settled) {
+      console.error('AnimationEngine: error after scene settled:', err);
+      return;
+    }
+    run.settled = true;
+    if (this._current === run) {
+      this._current = null;
+      this._playing = false;
+    }
+    this._cancelActive(run);
+    run.reject(err);
   }
 
   /**

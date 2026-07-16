@@ -83,3 +83,11 @@ test('resolveEasing falls back to linear for an unknown name', () => {
   const fn = resolveEasing('not-a-real-easing');
   assert.equal(fn(0.5), 0.5);
 });
+
+test('resolveEasing validates cubic-bezier coefficients before constructing a curve', () => {
+  const invalid = resolveEasing('cubic-bezier(nope,0,1,1)');
+  assert.equal(invalid(0.25), 0.25, 'invalid coefficients fall back to linear');
+
+  const valid = resolveEasing('cubic-bezier(0.42,0,1,1)');
+  assert.ok(valid(0.25) < 0.25, 'a valid ease-in cubic-bezier still curves');
+});

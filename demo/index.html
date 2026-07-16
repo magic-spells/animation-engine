@@ -399,6 +399,140 @@
       background: var(--teal); box-shadow: 0 0 10px var(--teal);
     }
 
+    /* ---- Section 7: spring chase ---- */
+    .spring-stage {
+      height: 320px;
+      cursor: crosshair;
+      touch-action: manipulation;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(94,202,187,0.06), transparent 44%),
+        linear-gradient(135deg, rgba(255,255,255,0.012), rgba(255,255,255,0.03));
+    }
+    .spring-orb {
+      position: absolute;
+      top: 0; left: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 30%, #c9fff7 0%, var(--teal) 34%, #23766b 100%);
+      box-shadow: 0 0 14px rgba(94,202,187,0.75), 0 0 42px rgba(94,202,187,0.3);
+      will-change: transform;
+      pointer-events: none;
+    }
+    .spring-ring {
+      position: absolute;
+      width: 18px; height: 18px;
+      border: 1px solid rgba(94,202,187,0.8);
+      border-radius: 50%;
+      box-shadow: 0 0 14px rgba(94,202,187,0.35);
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+    .spring-hint {
+      position: absolute;
+      left: 0; right: 0; bottom: 1rem;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-size: 0.68rem; letter-spacing: 0.08em;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    /* ---- Section 8: ripple grid ---- */
+    .ripple-stage {
+      height: 280px;
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      place-items: center;
+      padding: 1.6rem 2rem;
+      background:
+        radial-gradient(ellipse at center, rgba(94,202,187,0.055), transparent 65%),
+        linear-gradient(135deg, rgba(255,255,255,0.012), rgba(255,255,255,0.025));
+    }
+    .ripple-dot {
+      appearance: none;
+      width: 10px; height: 10px;
+      border: 0; border-radius: 50%;
+      background: var(--teal-dim);
+      box-shadow: 0 0 0 rgba(94,202,187,0);
+      opacity: 0.35;
+      cursor: pointer;
+      will-change: transform, opacity, box-shadow;
+    }
+    .ripple-dot:focus-visible { outline: 1px solid var(--cream); outline-offset: 4px; }
+
+    /* ---- Section 9: confetti cannon ---- */
+    .confetti-stage {
+      height: 340px;
+      isolation: isolate;
+      background:
+        radial-gradient(ellipse at 50% 100%, rgba(217,164,65,0.08), transparent 40%),
+        linear-gradient(180deg, #080c11 0%, #0b1117 100%);
+    }
+    .confetti-cannon {
+      position: absolute;
+      z-index: 1;
+      left: 50%; bottom: 53px;
+      width: 34px; height: 30px;
+      margin-left: -17px;
+      background: linear-gradient(135deg, var(--amber), #805d22);
+      clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+      filter: drop-shadow(0 4px 12px rgba(217,164,65,0.25));
+    }
+    .confetti-particle {
+      position: absolute;
+      z-index: 2;
+      left: 50%; bottom: 76px;
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+    .confetti-controls {
+      position: absolute;
+      z-index: 3;
+      left: 0; right: 0; bottom: 12px;
+      justify-content: center;
+      margin: 0;
+    }
+    .confetti-controls .btn { background: rgba(6,9,13,0.78); }
+
+    /* ---- Section 10: squash and stretch ---- */
+    .squash-stage {
+      height: 310px;
+      background:
+        radial-gradient(ellipse at 50% 86%, rgba(94,202,187,0.07), transparent 38%),
+        linear-gradient(180deg, #080c11 0%, #0d1419 100%);
+    }
+    .squash-stage::after {
+      content: '';
+      position: absolute;
+      left: 15%; right: 15%; bottom: 40px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+    }
+    .squash-ball {
+      position: absolute;
+      z-index: 2;
+      left: 50%; bottom: 42px;
+      width: 56px; height: 56px;
+      margin-left: -28px;
+      border-radius: 50%;
+      transform-origin: bottom center;
+      background: radial-gradient(circle at 34% 27%, #d5fff9 0%, var(--teal) 32%, #25786d 72%, #174d47 100%);
+      box-shadow: inset -8px -10px 18px rgba(4,34,31,0.4), 0 0 28px rgba(94,202,187,0.2);
+      will-change: transform;
+    }
+    .squash-shadow {
+      position: absolute;
+      z-index: 1;
+      left: 50%; bottom: 35px;
+      width: 76px; height: 13px;
+      margin-left: -38px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.72);
+      filter: blur(3px);
+      will-change: transform, opacity;
+    }
+
     /* ---- Footer ---- */
     .foot {
       text-align: center; padding: 3rem 1.5rem 5rem;
@@ -415,6 +549,10 @@
       .stage { height: 170px; }
       .leaf-stage { height: 240px; }
       .snow-stage { height: 400px; }
+      .spring-stage { height: 260px; }
+      .ripple-stage { height: 230px; padding: 1.25rem 0.65rem; }
+      .confetti-stage { height: 300px; }
+      .squash-stage { height: 260px; }
       .compare-grid { grid-template-columns: 1fr; }
       .install-banner { gap: 1.5rem; }
       .ease-name { min-width: 96px; }
@@ -637,6 +775,202 @@
   .<span class="fn">play</span>();
 
 myScene.<span class="fn">timeScale</span>(<span class="num">0.4</span>);  <span class="cm">// watch it in slow-mo</span></code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 07 Spring chase ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">07</span>
+        <h2>Spring chase</h2>
+      </div>
+      <p class="demo-desc">Every pointer press starts a fresh <em>.to()</em> spring. Click again mid-flight and last-write-wins interruption cancels the old tween, so the orb bends toward its new target without bookkeeping.</p>
+      <div class="stage spring-stage" id="spring-stage">
+        <div class="spring-orb" id="spring-orb"></div>
+        <span class="spring-hint">click around the stage · retarget mid-flight</span>
+      </div>
+      <div class="controls">
+        <button class="btn" id="spring-center">Center orb</button>
+      </div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="fn">scene</span>()
+  .<span class="fn">set</span>(springOrb, {
+    <span class="prop">transform</span>: () => <span class="str">`translate(${(springStage.clientWidth - springOrb.offsetWidth) / 2}px,
+                              ${(springStage.clientHeight - springOrb.offsetHeight) / 2}px)`</span>,
+  })
+  .<span class="fn">play</span>();
+
+springStage.<span class="fn">addEventListener</span>(<span class="str">'pointerdown'</span>, (event) => {
+  <span class="kw">const</span> rect = springStage.<span class="fn">getBoundingClientRect</span>();
+  <span class="kw">const</span> x = Math.<span class="fn">max</span>(<span class="num">0</span>, Math.<span class="fn">min</span>(rect.width - springOrb.offsetWidth,
+    event.clientX - rect.left - springOrb.offsetWidth / <span class="num">2</span>));
+  <span class="kw">const</span> y = Math.<span class="fn">max</span>(<span class="num">0</span>, Math.<span class="fn">min</span>(rect.height - springOrb.offsetHeight,
+    event.clientY - rect.top - springOrb.offsetHeight / <span class="num">2</span>));
+
+  <span class="fn">scene</span>()
+    .<span class="fn">to</span>(springOrb, { <span class="prop">transform</span>: <span class="str">`translate(${x}px, ${y}px)`</span> }, {
+      <span class="prop">physics</span>: { <span class="prop">attraction</span>: <span class="num">0.03</span>, <span class="prop">friction</span>: <span class="num">0.25</span> },
+    })
+    .<span class="fn">play</span>();
+
+  <span class="kw">const</span> ring = document.<span class="fn">createElement</span>(<span class="str">'div'</span>);
+  ring.className = <span class="str">'spring-ring'</span>;
+  ring.style.left = event.clientX - rect.left + <span class="str">'px'</span>;
+  ring.style.top = event.clientY - rect.top + <span class="str">'px'</span>;
+  springStage.<span class="fn">appendChild</span>(ring);
+
+  <span class="fn">scene</span>().<span class="fn">frames</span>(ring, {
+    <span class="num">0</span>:   { <span class="prop">opacity</span>: <span class="num">0.8</span>, <span class="prop">transform</span>: <span class="str">'translate(-50%, -50%) scale(0.3)'</span> },
+    <span class="num">100</span>: { <span class="prop">opacity</span>: <span class="num">0</span>,   <span class="prop">transform</span>: <span class="str">'translate(-50%, -50%) scale(3.6)'</span> },
+  }, { <span class="prop">duration</span>: <span class="num">520</span>, <span class="prop">easing</span>: <span class="str">'ease-out'</span> })
+    .<span class="fn">play</span>()
+    .<span class="fn">then</span>(() => ring.<span class="fn">remove</span>());
+});</code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 08 Ripple grid ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">08</span>
+        <h2>Ripple grid</h2>
+      </div>
+      <p class="demo-desc">Built-in <em>from:</em> modes rank dots by their one-dimensional index. Click a dot and a config function adds per-dot delay instead, turning the same <em>.stagger()</em> into a true radial wave.</p>
+      <div class="controls">
+        <button class="btn active" data-grid-from="start">Start</button>
+        <button class="btn" data-grid-from="end">End</button>
+        <button class="btn" data-grid-from="center">Center</button>
+        <button class="btn" data-grid-from="edges">Edges</button>
+        <button class="btn" data-grid-from="random">Random</button>
+      </div>
+      <div class="stage ripple-stage" id="ripple-stage"></div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="kw">const</span> gridPulse = {
+  <span class="num">0</span>:   { <span class="prop">opacity</span>: <span class="num">0.35</span>, <span class="prop">transform</span>: <span class="str">'scale(1)'</span>,   <span class="prop">boxShadow</span>: <span class="str">'0 0 0px rgba(94,202,187,0)'</span> },
+  <span class="num">40</span>:  { <span class="prop">opacity</span>: <span class="num">1</span>,    <span class="prop">transform</span>: <span class="str">'scale(1.9)'</span>, <span class="prop">boxShadow</span>: <span class="str">'0 0 18px rgba(94,202,187,0.9)'</span> },
+  <span class="num">100</span>: { <span class="prop">opacity</span>: <span class="num">0.35</span>, <span class="prop">transform</span>: <span class="str">'scale(1)'</span>,   <span class="prop">boxShadow</span>: <span class="str">'0 0 0px rgba(94,202,187,0)'</span> },
+};
+<span class="kw">const</span> pulseConfig = { <span class="prop">keyframes</span>: gridPulse, <span class="prop">duration</span>: <span class="num">450</span>, <span class="prop">easing</span>: <span class="str">'ease-in-out'</span> };
+
+<span class="kw">function</span> <span class="fn">playGridFrom</span>(from) {
+  <span class="kw">if</span> (gridScene) gridScene.<span class="fn">stop</span>();
+  gridScene = <span class="fn">scene</span>().<span class="fn">stagger</span>(gridDots, pulseConfig, {
+    <span class="prop">interval</span>: <span class="num">18</span>, <span class="prop">from</span>: from,
+  });
+  gridScene.<span class="fn">play</span>();
+}
+
+<span class="kw">function</span> <span class="fn">playRadialGrid</span>(origin) {
+  <span class="kw">if</span> (gridScene) gridScene.<span class="fn">stop</span>();
+  <span class="kw">const</span> originRow = Math.<span class="fn">floor</span>(origin / GRID_COLUMNS);
+  <span class="kw">const</span> originCol = origin % GRID_COLUMNS;
+
+  gridScene = <span class="fn">scene</span>().<span class="fn">stagger</span>(gridDots, (_, i) => {
+    <span class="kw">const</span> row = Math.<span class="fn">floor</span>(i / GRID_COLUMNS);
+    <span class="kw">const</span> col = i % GRID_COLUMNS;
+    <span class="kw">const</span> distance = Math.<span class="fn">hypot</span>(row - originRow, col - originCol);
+    <span class="kw">return</span> { ...pulseConfig, <span class="prop">delay</span>: distance * <span class="num">26</span> };
+  }, { <span class="prop">interval</span>: <span class="num">0</span> });
+  gridScene.<span class="fn">play</span>();
+}</code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 09 Confetti cannon ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">09</span>
+        <h2>Confetti cannon</h2>
+      </div>
+      <p class="demo-desc">Seventy disposable scenes launch on every press. <em>rand()</em> supplies each particle’s size, angle, arc, drift, spin and duration; one unevenly spaced <em>.frames()</em> track fakes gravity, then removes its own element.</p>
+      <div class="stage confetti-stage" id="confetti-stage">
+        <div class="confetti-cannon"></div>
+        <div class="controls confetti-controls">
+          <button class="btn" id="confetti-fire">Fire</button>
+        </div>
+      </div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="kw">const</span> confettiColors = [<span class="str">'#5ecabb'</span>, <span class="str">'#d9a441'</span>, <span class="str">'#e08a6f'</span>, <span class="str">'#86b5e8'</span>, <span class="str">'#e6eae6'</span>];
+
+<span class="kw">function</span> <span class="fn">fireConfetti</span>() {
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; <span class="num">70</span>; i++) {
+    <span class="kw">const</span> particle = document.<span class="fn">createElement</span>(<span class="str">'div'</span>);
+    particle.className = <span class="str">'confetti-particle'</span>;
+    particle.style.width = <span class="fn">rand</span>(<span class="num">5</span>, <span class="num">11</span>, <span class="str">'px'</span>)();
+    particle.style.height = <span class="fn">rand</span>(<span class="num">4</span>, <span class="num">9</span>, <span class="str">'px'</span>)();
+    particle.style.borderRadius = <span class="fn">pick</span>([<span class="str">'50%'</span>, <span class="str">'2px'</span>])();
+    particle.style.background = <span class="fn">pick</span>(confettiColors)();
+    confettiStage.<span class="fn">appendChild</span>(particle);
+
+    <span class="kw">const</span> angle = <span class="fn">rand</span>(<span class="num">-150</span>, <span class="num">-30</span>)();
+    <span class="kw">const</span> radians = angle * Math.PI / <span class="num">180</span>;
+    <span class="kw">const</span> direction = Math.<span class="fn">cos</span>(radians) &lt; <span class="num">0</span> ? <span class="num">-1</span> : <span class="num">1</span>;
+    <span class="kw">const</span> drift = direction * (Math.<span class="fn">abs</span>(Math.<span class="fn">cos</span>(radians)) * <span class="num">120</span> + <span class="fn">rand</span>(<span class="num">35</span>, <span class="num">110</span>)());
+    <span class="kw">const</span> height = <span class="fn">rand</span>(<span class="num">180</span>, <span class="num">270</span>)();
+    <span class="kw">const</span> spin = <span class="fn">rand</span>(<span class="num">-960</span>, <span class="num">960</span>)();
+    <span class="kw">const</span> fall = confettiStage.clientHeight + <span class="num">40</span>;
+
+    <span class="fn">scene</span>().<span class="fn">frames</span>(particle, {
+      <span class="num">0</span>:   { <span class="prop">opacity</span>: <span class="num">1</span>, <span class="prop">transform</span>: <span class="str">'translate(0px, 0px) rotate(0deg)'</span> },
+      <span class="num">22</span>:  { <span class="prop">transform</span>: <span class="str">`translate(${drift * 0.28}px, ${-height * 0.78}px) rotate(${spin * 0.18}deg)`</span> },
+      <span class="num">38</span>:  { <span class="prop">transform</span>: <span class="str">`translate(${drift * 0.48}px, ${-height}px) rotate(${spin * 0.36}deg)`</span> },
+      <span class="num">54</span>:  { <span class="prop">transform</span>: <span class="str">`translate(${drift * 0.66}px, ${-height * 0.72}px) rotate(${spin * 0.56}deg)`</span> },
+      <span class="num">100</span>: { <span class="prop">opacity</span>: <span class="num">0</span>, <span class="prop">transform</span>: <span class="str">`translate(${drift}px, ${fall}px) rotate(${spin}deg)`</span> },
+    }, { <span class="prop">duration</span>: <span class="fn">rand</span>(<span class="num">1200</span>, <span class="num">2200</span>), <span class="prop">easing</span>: <span class="str">'linear'</span> })
+      .<span class="fn">play</span>()
+      .<span class="fn">then</span>(() => particle.<span class="fn">remove</span>());
+  }
+}</code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 10 Squash and stretch ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">10</span>
+        <h2>Squash &amp; stretch</h2>
+      </div>
+      <p class="demo-desc">One looping <em>.parallel()</em> keeps the ball and shadow in sync. Uneven keyframe spacing shapes the fall and rebound, while sparse shadow keys fill per property like CSS <em>@keyframes</em>.</p>
+      <div class="stage squash-stage" id="squash-stage">
+        <div class="squash-shadow" id="squash-shadow"></div>
+        <div class="squash-ball" id="squash-ball"></div>
+      </div>
+      <div class="controls">
+        <button class="btn active" id="squash-play">Play</button>
+        <button class="btn" id="squash-stop">Stop</button>
+      </div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="kw">const</span> squashScene = <span class="fn">scene</span>({ <span class="prop">loop</span>: <span class="kw">true</span> }).<span class="fn">parallel</span>((p) => {
+  p.<span class="fn">frames</span>(squashBall, {
+    <span class="num">0</span>:   { <span class="prop">transform</span>: <span class="str">'translateY(-170px) scaleX(1.03) scaleY(0.97)'</span> },
+    <span class="num">10</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-170px) scaleX(1) scaleY(1)'</span> },
+    <span class="num">29</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-92px) scaleX(0.9) scaleY(1.15)'</span> },
+    <span class="num">44</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-8px) scaleX(0.92) scaleY(1.12)'</span> },
+    <span class="num">49</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(0px) scaleX(1.38) scaleY(0.62)'</span> },
+    <span class="num">57</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-25px) scaleX(0.9) scaleY(1.15)'</span> },
+    <span class="num">76</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-132px) scaleX(0.94) scaleY(1.08)'</span> },
+    <span class="num">90</span>:  { <span class="prop">transform</span>: <span class="str">'translateY(-170px) scaleX(1) scaleY(1)'</span> },
+    <span class="num">100</span>: { <span class="prop">transform</span>: <span class="str">'translateY(-170px) scaleX(1.03) scaleY(0.97)'</span> },
+  }, { <span class="prop">duration</span>: <span class="num">1400</span>, <span class="prop">easing</span>: <span class="str">'linear'</span> });
+
+  p.<span class="fn">frames</span>(squashShadow, {
+    <span class="num">0</span>:   { <span class="prop">opacity</span>: <span class="num">0.18</span>, <span class="prop">transform</span>: <span class="str">'scale(0.45)'</span> },
+    <span class="num">29</span>:  { <span class="prop">transform</span>: <span class="str">'scale(0.68)'</span> },
+    <span class="num">44</span>:  { <span class="prop">opacity</span>: <span class="num">0.5</span> },
+    <span class="num">49</span>:  { <span class="prop">opacity</span>: <span class="num">0.68</span>, <span class="prop">transform</span>: <span class="str">'scale(1.12)'</span> },
+    <span class="num">57</span>:  { <span class="prop">opacity</span>: <span class="num">0.5</span> },
+    <span class="num">76</span>:  { <span class="prop">transform</span>: <span class="str">'scale(0.6)'</span> },
+    <span class="num">90</span>:  { <span class="prop">opacity</span>: <span class="num">0.18</span>, <span class="prop">transform</span>: <span class="str">'scale(0.45)'</span> },
+    <span class="num">100</span>: { <span class="prop">opacity</span>: <span class="num">0.18</span>, <span class="prop">transform</span>: <span class="str">'scale(0.45)'</span> },
+  }, { <span class="prop">duration</span>: <span class="num">1400</span>, <span class="prop">easing</span>: <span class="str">'linear'</span> });
+});
+
+<span class="fn">registerLoop</span>(squashScene);
+squashScene.<span class="fn">play</span>();</code></pre>
       </details>
     </section>
 

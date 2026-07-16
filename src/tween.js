@@ -9,7 +9,7 @@
  */
 
 import ticker from './ticker.js';
-import { activeElementTweens, recordStyles } from './state.js';
+import { activeElementTweens, claimElement, recordStyles } from './state.js';
 
 export default class Tween {
   /**
@@ -45,12 +45,12 @@ export default class Tween {
    * @returns {Promise<void>}
    */
   start() {
-    const prev = activeElementTweens.get(this.el);
-    if (prev && prev !== this) prev.cancel();
+    if (activeElementTweens.get(this.el) !== this) claimElement(this.el);
     activeElementTweens.set(this.el, this);
 
     if (this.duration <= 0) {
-      this._apply(1);
+      this._lastStyles = this.endStyles;
+      Object.assign(this.el.style, this.endStyles);
       this._finish();
       return this.promise;
     }
@@ -70,7 +70,8 @@ export default class Tween {
     this.elapsed += delta * this.timeScale();
     const t = this.elapsed / this.duration;
     if (t >= 1) {
-      this._apply(1);
+      this._lastStyles = this.endStyles;
+      Object.assign(this.el.style, this.endStyles);
       this._finish();
       return;
     }

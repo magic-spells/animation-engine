@@ -89,6 +89,12 @@ export function resolveFromState(el, toStyles) {
     }
 
     if (prop === 'transform') {
+      const inline = el.style ? el.style.transform : undefined;
+      if (inline && inline !== 'none' && !inline.startsWith('matrix')) {
+        from[prop] = inline;
+        continue;
+      }
+
       // No tracked prior transform — jump instead of tweening from a matrix.
       if (!_transformFallbackWarned) {
         _transformFallbackWarned = true;

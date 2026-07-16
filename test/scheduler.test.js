@@ -117,6 +117,31 @@ test('stagger accepts a (el, i) => config function', async () => {
   assert.equal(els[1].style.opacity, '1');
 });
 
+test('stagger center ranks are normalized for an even element count', async () => {
+  const els = [el(), el(), el(), el()];
+  const s = scene().stagger(
+    els,
+    { from: { opacity: 0 }, to: { opacity: 1 }, duration: 100 },
+    { from: 'center', interval: 100 }
+  );
+
+  const done = s.play();
+  await flush();
+  await advance(16);
+
+  assert.notEqual(els[1].style.opacity, undefined, 'first middle item started immediately');
+  assert.notEqual(els[2].style.opacity, undefined, 'second middle item started immediately');
+  assert.equal(els[0].style.opacity, undefined, 'first outer item is still delayed');
+  assert.equal(els[3].style.opacity, undefined, 'second outer item is still delayed');
+
+  await advance(100);
+  assert.notEqual(els[0].style.opacity, undefined, 'first outer item started by ~116ms');
+  assert.notEqual(els[3].style.opacity, undefined, 'second outer item started by ~116ms');
+
+  await advance(140);
+  await done;
+});
+
 // ---- Loop / alternate -------------------------------------------------------
 
 test('loop count + alternate reverses order and swaps from/to', async () => {
@@ -149,6 +174,33 @@ test('loop stops at a boundary when every target is disconnected', async () => {
   await advance(80);
   await done; // resolves: after iter 0, the boundary check finds all targets gone
   assert.equal(a.style.opacity, '1', 'one iteration completed before stopping');
+});
+
+test('an empty infinite scene yields so it can be stopped', async () => {
+  const s = scene({ loop: true });
+  const done = s.play();
+
+  assert.ok(done instanceof Promise, 'play returned instead of entering a synchronous loop');
+  await flush();
+  s.stop();
+  await done;
+});
+
+test('a zero-target infinite scene does not starve timers', async () => {
+  const s = scene({ loop: true }).to('.nothing', { opacity: 0 });
+  const done = s.play();
+  let timerFired = false;
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      timerFired = true;
+      resolve();
+    }, 10);
+  });
+
+  assert.equal(timerFired, true, 'a real timer ran while the scene was looping');
+  s.stop();
+  await done;
 });
 
 // ---- Stop / finish ----------------------------------------------------------
@@ -222,6 +274,137 @@ test('calling play() after completion restarts with a fresh promise', async () =
   await p2;
 });
 
+test('stop followed by immediate replay isolates the two runs', async () => {
+  const a = el();
+  const log = [];
+  const s = scene()
+    .to(a, { opacity: 0 }, { duration: 100 })
+    .call(() => log.push('called'));
+
+  const first = s.play();
+  await flush();
+  await advance(32);
+
+  s.stop();
+  let replayResolved = false;
+  const replay = s.play();
+  replay.then(() => {
+    replayResolved = true;
+  });
+
+  await flush();
+  assert.deepEqual(log, [], 'the stopped runner did not leak into the replay');
+  assert.equal(replayResolved, false, 'the replay is still animating');
+
+  await advance(140);
+  await replay;
+  await first;
+  assert.deepEqual(log, ['called'], 'the replay ran the callback exactly once');
+});
+
+test('an onComplete replay preserves both play promises', async () => {
+  const a = el();
+  let completions = 0;
+  let replay;
+  const s = scene({
+    onComplete: () => {
+      completions++;
+      if (completions === 1) replay = s.play();
+    },
+  }).fromTo(a, { opacity: 0 }, { opacity: 1 }, { duration: 100 });
+
+  const first = s.play();
+  await flush();
+  await advance(120);
+  await first;
+  assert.ok(replay instanceof Promise, 'onComplete started a replay');
+
+  await advance(120);
+  await replay;
+  assert.equal(completions, 2, 'both runs completed independently');
+});
+
+test('throwing and rejecting .call() steps reject without bricking playback', async () => {
+  const throwing = scene().call(() => {
+    throw new Error('boom');
+  });
+
+  await assert.rejects(throwing.play(), /boom/);
+  assert.equal(throwing._playing, false, 'the scene is not left playing after rejection');
+
+  const benign = scene().call(() => {});
+  await benign.play();
+  assert.equal(benign._playing, false, 'a subsequent benign scene resolves normally');
+
+  const rejecting = scene().call(() => Promise.reject(new Error('async boom')));
+  await assert.rejects(rejecting.play(), /async boom/);
+  assert.equal(rejecting._playing, false, 'an async rejection also resets playback state');
+});
+
+test('an interrupting tween derives its from-state from the visible frame', async () => {
+  const a = el();
+  const firstScene = scene().fromTo(a, { opacity: 0 }, { opacity: 1 }, { duration: 100 });
+  const firstDone = firstScene.play();
+  await flush();
+  await advance(48);
+  const frozen = parseFloat(a.style.opacity);
+
+  const secondScene = scene().to(a, { opacity: 0 }, { duration: 100 });
+  const secondDone = secondScene.play();
+  await flush();
+
+  assert.ok(
+    Math.abs(parseFloat(a.style.opacity) - frozen) <= 0.05,
+    'the interrupt starts from the frame visible when ownership changed'
+  );
+
+  secondScene.stop();
+  await Promise.all([firstDone, secondDone]);
+});
+
+test('.set() takes ownership from a running tween', async () => {
+  const a = el();
+  const firstScene = scene().fromTo(a, { opacity: 0 }, { opacity: 1 }, { duration: 1000 });
+  const firstDone = firstScene.play();
+  await flush();
+  await advance(64);
+
+  await scene().set(a, { opacity: 0.25 }).play();
+  await advance(64);
+
+  assert.equal(String(a.style.opacity), '0.25', 'the cancelled tween cannot overwrite the set');
+  await firstDone;
+});
+
+test('a custom easing that ends below one still lands exactly on the target', async () => {
+  const a = el();
+  const s = scene().fromTo(
+    a,
+    { opacity: 0 },
+    { opacity: 1 },
+    { duration: 100, easing: (t) => t * 0.5 }
+  );
+
+  const done = s.play();
+  await flush();
+  await advance(120);
+  await done;
+  assert.equal(a.style.opacity, '1');
+});
+
+test('an inline functional transform is used as the first .to() from-state', async () => {
+  const a = el();
+  a.style.transform = 'translateX(0px)';
+  const s = scene().to(a, { transform: 'translateX(100px)' }, { duration: 100 });
+
+  const done = s.play();
+  await flush();
+  assert.equal(a.style.transform, 'translateX(0px)', 'the first paint preserves the inline transform');
+
+  s.stop();
+  await done;
+});
+
 // ---- Physics (Node fallback) ------------------------------------------------
 
 test('a physics step resolves and lands on its end state (Node no-rAF fallback)', async () => {
@@ -237,6 +420,34 @@ test('a physics step resolves and lands on its end state (Node no-rAF fallback)'
   await flush();
   await done;
   assert.equal(a.style.opacity, '1', 'physics step settled at its end value');
+});
+
+test('a physics step animates through intermediate progress on the rAF path', async () => {
+  let fakeNow = 0;
+  globalThis.requestAnimationFrame = (cb) => setTimeout(() => cb((fakeNow += 16.66)), 0);
+  try {
+    const a = el();
+    const seen = [];
+    const s = scene().fromTo(
+      a,
+      { opacity: 0 },
+      { opacity: 1 },
+      { physics: { attraction: 0.026, friction: 0.28 } }
+    );
+
+    const done = s.play();
+    const poll = setInterval(() => seen.push(parseFloat(a.style.opacity)), 0);
+    await done;
+    clearInterval(poll);
+
+    assert.equal(a.style.opacity, '1', 'settled at end value');
+    assert.ok(
+      seen.some((value) => value > 0 && value < 1),
+      'intermediate frames were painted on the real spring path'
+    );
+  } finally {
+    delete globalThis.requestAnimationFrame;
+  }
 });
 
 // ---- timeScale --------------------------------------------------------------

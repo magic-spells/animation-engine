@@ -48,8 +48,9 @@ functions, so an untracked first `.to({transform})` jumps (warned once) — seed
 `.set()` or use `.fromTo()`/`.frames()`.
 
 **Interrupts are last-write-wins**: starting a tween on an element cancels the one already
-running on it (its step ends early; that scene proceeds). Infinite loops stop at iteration
-boundaries when every element target is disconnected from the DOM.
+running on it before deriving from-state; immediate writes claim the element the same way
+(its step ends early; that scene proceeds). Infinite loops yield a macrotask at every
+iteration boundary and stop when every element target is disconnected from the DOM.
 
 ## Key files
 

@@ -160,7 +160,7 @@ scene().stagger(targets, config, opts);
 
 | control | behaviour |
 | --- | --- |
-| `.play()` | returns a promise resolving when the scene completes, is stopped, or is finished. Calling while playing returns the in-flight promise; calling after completion restarts. |
+| `.play()` | returns a promise resolving when the scene completes, is stopped, or is finished. It rejects if a `.call()` callback, lazy value, or lifecycle callback throws or returns a rejected promise; the scene remains replayable. Calling while playing returns the in-flight promise; calling after completion restarts. |
 | `.stop()` | freeze in place, resolve the promise, emit `'stop'`. Remaining steps do not run. |
 | `.finish()` | synchronously apply every step's end state, resolve, emit `'complete'`. (Applies visual end states only — `.call()` hooks are not invoked.) |
 | `.timeScale(n)` | get (no arg) or set (with arg) the per-scene rate multiplier. Affects durations, waits and stagger intervals. **Physics steps are unaffected.** |
@@ -248,8 +248,8 @@ scene()
 
 - **Transform clobbering (concurrent tracks).** frame-engine returns whole `transform` strings, so two steps writing `transform` on the same element (e.g. fall + sway) clobber each other. v1 answer: put them on **separate wrapper elements** (fall on an outer element, sway on an inner one) or express both in one multi-stop `.frames()` keyframe set. True transform composition is a v2 idea.
 - **Physics can't pause or be time-scaled.** A spring has no duration and runs on its own clock; `timeScale` and a fixed length don't apply. Use an overshoot easing for a springy feel you can still sequence and box in time.
-- **First `.to()` on a transform.** With no tracked prior state, the engine would have to read computed style — and computed `transform` serialises to a `matrix(...)`, which cannot be interpolated against transform functions. In that case the transform is treated as a discrete jump (it snaps to the target). Seed the first transform with `.set()` or use `.fromTo()` for a smooth first transform tween.
-- **Interrupts (last write wins).** Starting a new tween on an element cancels any tween already running on it; the cancelled step just ends early and its scene proceeds. Tracked across scenes via a module-level `WeakMap`.
+- **First `.to()` on a transform.** A usable inline functional transform is used as the from-state. Otherwise, with no tracked prior state, the engine would have to read computed style — and computed `transform` serialises to a `matrix(...)`, which cannot be interpolated against transform functions. In that case the transform is treated as a discrete jump (it snaps to the target). Seed the first transform with `.set()` or use `.fromTo()` for a smooth first transform tween.
+- **Interrupts (last write wins).** Starting a new tween or applying `.set()`/an immediate end-state on an element cancels any tween already running on it. The cancelled tween records its visible state before the new owner reads or writes the element; its scene then proceeds. Tracked across scenes via a module-level `WeakMap`.
 - **Detached nodes.** At each loop boundary, if every element target is `isConnected === false`, the scene stops — preventing leaked forever-loops on removed nodes.
 - **Reduced motion.** With `respectReducedMotion` (default `true`), `prefers-reduced-motion: reduce` makes `.play()` apply each step's end state instantly for a single iteration, then resolve.
 

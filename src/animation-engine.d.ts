@@ -135,7 +135,11 @@ export class Scene {
   timeScale(): number;
   timeScale(n: number): this;
 
-  /** Play; resolves when the scene completes, is stopped, or is finished. */
+  /**
+   * Play; resolves when the scene completes, is stopped, or is finished.
+   * Rejects if a call callback, lazy value, or lifecycle callback throws or
+   * returns a rejected promise; the scene can be played again afterwards.
+   */
   play(): Promise<void>;
   /** Freeze in place; resolves the promise and emits 'stop'. */
   stop(): void;

@@ -134,12 +134,17 @@ export function resolveEasing(easing) {
   if (typeof easing === 'string') {
     const cb = easing.match(CUBIC_BEZIER_RE);
     if (cb) {
-      return cubicBezier(
-        parseFloat(cb[1]),
-        parseFloat(cb[2]),
-        parseFloat(cb[3]),
-        parseFloat(cb[4])
-      );
+      const values = cb.slice(1).map((value) => parseFloat(value));
+      const [x1, y1, x2, y2] = values;
+      if (
+        values.every(Number.isFinite) &&
+        x1 >= 0 &&
+        x1 <= 1 &&
+        x2 >= 0 &&
+        x2 <= 1
+      ) {
+        return cubicBezier(x1, y1, x2, y2);
+      }
     }
     if (easings[easing]) return easings[easing];
   }
