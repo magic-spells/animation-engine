@@ -1,0 +1,44 @@
+{
+  "name": "@magic-spells/animation-engine",
+  "version": "0.1.0",
+  "description": "Declarative animation sequencing engine — chainable scenes with easing, physics, staggers, loops and randomness for the magic-spells ecosystem",
+  "type": "module",
+  "main": "dist/animation-engine.min.js",
+  "module": "dist/animation-engine.esm.js",
+  "types": "dist/animation-engine.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/animation-engine.d.ts",
+      "import": "./dist/animation-engine.esm.js",
+      "require": "./dist/animation-engine.min.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "BUILD_FORMAT=es vite build && BUILD_FORMAT=umd vite build",
+    "dev": "vite",
+    "prod": "vite build --watch",
+    "test": "node --test",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "Cory Schulz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magic-spells/animation-engine.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {
+    "@magic-spells/event-emitter": "^0.1.0",
+    "@magic-spells/frame-engine": "^1.0.1",
+    "@magic-spells/physics-engine": "^1.0.0"
+  },
+  "devDependencies": {
+    "vite": "^8.1.4"
+  }
+}
