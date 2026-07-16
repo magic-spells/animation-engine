@@ -11,6 +11,8 @@ animation-engine owns everything neither has: **time, easing, sequencing, repeti
 
 A Scene is an **async chain** (run step → await completion → next), not a fixed timeline with a playhead. That is because physics steps have no duration — a spring finishes when it settles. It is also the honest reason there is no seek/scrub/reverse in v1.
 
+[**Live Demo**](https://magic-spells.github.io/animation-engine/demo/)
+
 ## Install
 
 ```bash
@@ -261,3 +263,9 @@ scene()
 ## License
 
 MIT © Cory Schulz
+
+---
+
+<p align="center">
+  Made by <a href="https://github.com/coryschulz">Cory Schulz</a>
+</p>
