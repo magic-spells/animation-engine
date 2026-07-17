@@ -561,6 +561,160 @@
       will-change: transform, opacity;
     }
 
+    /* ---- Section 12: spell sigil ---- */
+    .sigil-stage {
+      height: 340px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(94,202,187,0.09), transparent 42%),
+        linear-gradient(135deg, rgba(255,255,255,0.012), rgba(94,202,187,0.025));
+    }
+    .sigil-aura {
+      width: min(255px, 74vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      will-change: transform, filter;
+    }
+    .sigil-svg { width: 100%; height: 100%; overflow: visible; }
+    .sigil-draw {
+      fill: none;
+      stroke: var(--teal);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      opacity: 0.18;
+      will-change: stroke-dashoffset, opacity;
+    }
+    .sigil-draw.sigil-orbit { stroke: var(--cool); stroke-width: 1; }
+    .sigil-draw.sigil-rune { stroke: var(--cream-dim); stroke-width: 1.1; }
+    .sigil-node {
+      fill: var(--teal);
+      filter: drop-shadow(0 0 7px rgba(94,202,187,0.9));
+      transform-box: fill-box;
+      transform-origin: center;
+      opacity: 0;
+      transform: scale(0.2);
+      will-change: transform, opacity;
+    }
+    .sigil-core {
+      transform-box: fill-box;
+      transform-origin: center;
+      opacity: 0;
+      transform: scale(0.4) rotate(-45deg);
+      will-change: transform, opacity;
+    }
+    .sigil-core-diamond {
+      fill: rgba(94,202,187,0.1);
+      stroke: var(--teal);
+      stroke-width: 1.2;
+    }
+    .sigil-core-mark {
+      fill: none;
+      stroke: var(--cream);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 8px rgba(230,234,230,0.65));
+    }
+
+    /* ---- Section 13: arcana deal ---- */
+    .arcana-stage {
+      height: 350px;
+      perspective: 1000px;
+      background:
+        radial-gradient(ellipse at 50% 72%, rgba(217,164,65,0.08), transparent 44%),
+        linear-gradient(180deg, #080c11 0%, #0d1218 100%);
+    }
+    .arcana-stage::after {
+      content: '';
+      position: absolute;
+      left: 18%; right: 18%; bottom: 44px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(217,164,65,0.4), transparent);
+    }
+    .arcana-slot {
+      position: absolute;
+      z-index: var(--card-layer);
+      left: 50%; top: 50%;
+      width: clamp(74px, 12vw, 104px);
+      aspect-ratio: 2 / 3;
+      translate: -50% -50%;
+      transform-origin: 50% 115%;
+      will-change: transform;
+    }
+    .arcana-card {
+      position: relative;
+      width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .arcana-face {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(217,164,65,0.55);
+      border-radius: 9px;
+      overflow: hidden;
+      backface-visibility: hidden;
+      box-shadow: 0 13px 32px rgba(0,0,0,0.42);
+    }
+    .arcana-back {
+      background:
+        radial-gradient(circle at center, transparent 0 20%, rgba(217,164,65,0.18) 21% 22%, transparent 23% 35%, rgba(217,164,65,0.12) 36% 37%, transparent 38%),
+        linear-gradient(135deg, #101a20, #0a1015);
+    }
+    .arcana-back::before {
+      content: '✦';
+      display: grid;
+      place-items: center;
+      width: 58%;
+      aspect-ratio: 1;
+      color: var(--amber);
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      border: 1px solid rgba(217,164,65,0.45);
+      transform: rotate(45deg);
+      text-shadow: 0 0 15px rgba(217,164,65,0.55);
+    }
+    .arcana-back::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border: 1px solid rgba(217,164,65,0.18);
+      border-radius: 5px;
+    }
+    .arcana-front {
+      transform: rotateY(180deg);
+      color: var(--cream);
+      background:
+        radial-gradient(circle at 50% 42%, rgba(94,202,187,0.12), transparent 34%),
+        linear-gradient(160deg, #17232a, #0b1116 72%);
+    }
+    .arcana-front::before {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border: 1px solid rgba(94,202,187,0.24);
+      border-radius: 5px;
+    }
+    .arcana-number {
+      position: absolute;
+      top: 10px; left: 11px;
+      font-family: var(--font-display);
+      font-size: 0.82rem;
+      color: var(--amber);
+    }
+    .arcana-glyph {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1;
+      color: var(--card-color, var(--teal));
+      text-shadow: 0 0 20px color-mix(in srgb, var(--card-color, var(--teal)) 55%, transparent);
+    }
+
     /* ---- Footer ---- */
     .foot {
       text-align: center; padding: 3rem 1.5rem 5rem;
@@ -581,6 +735,8 @@
       .ripple-stage { height: 230px; padding: 1.25rem 0.65rem; }
       .confetti-stage { height: 300px; }
       .squash-stage { height: 260px; }
+      .sigil-stage { height: 290px; }
+      .arcana-stage { height: 290px; }
       .compare-grid { grid-template-columns: 1fr; }
       .install-banner { gap: 1.5rem; }
       .ease-name { min-width: 96px; }
@@ -1041,6 +1197,126 @@ springCenterBtn.<span class="fn">addEventListener</span>(<span class="str">'clic
 
 <span class="fn">registerLoop</span>(squashScene);
 squashScene.<span class="fn">play</span>();</code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 12 Spell sigil ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">12</span>
+        <h2>Spell sigil draw</h2>
+      </div>
+      <p class="demo-desc">SVG geometry works like any other target. Measured path lengths seed <em>strokeDashoffset</em>, then a <em>.stagger()</em> draws the seal before its nodes, core and final glow resolve in sequence.</p>
+      <div class="stage sigil-stage">
+        <div class="sigil-aura" id="sigil-aura">
+          <svg class="sigil-svg" viewBox="0 0 300 300" role="img" aria-label="An animated geometric spell sigil">
+            <circle class="sigil-draw sigil-orbit" data-sigil-path cx="150" cy="150" r="118" />
+            <circle class="sigil-draw" data-sigil-path cx="150" cy="150" r="91" />
+            <path class="sigil-draw" data-sigil-path d="M150 32 L252 209 L48 209 Z" />
+            <path class="sigil-draw sigil-rune" data-sigil-path d="M150 59 L226 150 L150 241 L74 150 Z" />
+            <path class="sigil-draw sigil-rune" data-sigil-path d="M59 150 H241 M150 59 V241" />
+            <path class="sigil-draw sigil-orbit" data-sigil-path d="M91 78 C155 122 145 178 209 222 M209 78 C145 122 155 178 91 222" />
+
+            <g aria-hidden="true">
+              <circle class="sigil-node" cx="150" cy="32" r="4" />
+              <circle class="sigil-node" cx="252" cy="209" r="4" />
+              <circle class="sigil-node" cx="48" cy="209" r="4" />
+              <circle class="sigil-node" cx="150" cy="59" r="3" />
+              <circle class="sigil-node" cx="226" cy="150" r="3" />
+              <circle class="sigil-node" cx="150" cy="241" r="3" />
+              <circle class="sigil-node" cx="74" cy="150" r="3" />
+            </g>
+
+            <g class="sigil-core" id="sigil-core" aria-hidden="true">
+              <path class="sigil-core-diamond" d="M150 112 L181 150 L150 188 L119 150 Z" />
+              <path class="sigil-core-mark" d="M136 161 C136 139 164 139 164 124 C176 141 169 170 150 177 C143 174 138 169 136 161 Z" />
+            </g>
+          </svg>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="sigil-replay">Replay</button>
+      </div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="kw">const</span> draw = <span class="fn">scene</span>();
+
+paths.<span class="fn">forEach</span>((path) => {
+  <span class="kw">const</span> length = path.<span class="fn">getTotalLength</span>();
+  draw.<span class="fn">set</span>(path, { <span class="prop">strokeDasharray</span>: length, <span class="prop">strokeDashoffset</span>: length });
+});
+
+draw
+  .<span class="fn">stagger</span>(paths, (path) => ({
+    <span class="prop">to</span>: { <span class="prop">strokeDashoffset</span>: <span class="num">0</span>, <span class="prop">opacity</span>: <span class="num">1</span> },
+    <span class="prop">duration</span>: <span class="num">700</span>, <span class="prop">easing</span>: <span class="str">'ease-in-out'</span>,
+  }), { <span class="prop">interval</span>: <span class="num">110</span> })
+  .<span class="fn">parallel</span>((p) => {
+    p.<span class="fn">stagger</span>(nodes, nodeReveal, { <span class="prop">interval</span>: <span class="num">70</span>, <span class="prop">from</span>: <span class="str">'center'</span> });
+    p.<span class="fn">fromTo</span>(core, hiddenCore, visibleCore, { <span class="prop">duration</span>: <span class="num">900</span>, <span class="prop">easing</span>: <span class="str">'elastic-out'</span> });
+  })
+  .<span class="fn">frames</span>(aura, glowPulse, { <span class="prop">duration</span>: <span class="num">800</span> })
+  .<span class="fn">play</span>();</code></pre>
+      </details>
+    </section>
+
+    <!-- ---- 13 Arcana deal ---- -->
+    <section class="demo-section">
+      <div class="demo-header">
+        <span class="demo-index">13</span>
+        <h2>Arcana card deal</h2>
+      </div>
+      <p class="demo-desc">The outer wrappers deal into a responsive fan while the inner cards own the <em>rotateY()</em> reveal. Splitting those transform tracks avoids clobbering and makes the whole sequence easy to gather in reverse.</p>
+      <div class="stage arcana-stage" id="arcana-stage">
+        <div class="arcana-slot" style="--card-layer: 1; --card-color: var(--cool);">
+          <div class="arcana-card">
+            <div class="arcana-face arcana-back"></div>
+            <div class="arcana-face arcana-front"><span class="arcana-number">I</span><span class="arcana-glyph">☾</span></div>
+          </div>
+        </div>
+        <div class="arcana-slot" style="--card-layer: 2; --card-color: var(--rose);">
+          <div class="arcana-card">
+            <div class="arcana-face arcana-back"></div>
+            <div class="arcana-face arcana-front"><span class="arcana-number">II</span><span class="arcana-glyph">◇</span></div>
+          </div>
+        </div>
+        <div class="arcana-slot" style="--card-layer: 3; --card-color: var(--teal);">
+          <div class="arcana-card">
+            <div class="arcana-face arcana-back"></div>
+            <div class="arcana-face arcana-front"><span class="arcana-number">III</span><span class="arcana-glyph">✦</span></div>
+          </div>
+        </div>
+        <div class="arcana-slot" style="--card-layer: 4; --card-color: var(--amber);">
+          <div class="arcana-card">
+            <div class="arcana-face arcana-back"></div>
+            <div class="arcana-face arcana-front"><span class="arcana-number">IV</span><span class="arcana-glyph">☼</span></div>
+          </div>
+        </div>
+        <div class="arcana-slot" style="--card-layer: 5; --card-color: var(--cream-dim);">
+          <div class="arcana-card">
+            <div class="arcana-face arcana-back"></div>
+            <div class="arcana-face arcana-front"><span class="arcana-number">V</span><span class="arcana-glyph">△</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn active" id="arcana-deal">Deal</button>
+        <button class="btn" id="arcana-gather" disabled>Gather</button>
+      </div>
+      <details class="code-aside">
+        <summary>view the scene()</summary>
+        <pre><code><span class="cm">// Outer wrappers position the cards; inner elements own the 3D flip.</span>
+<span class="fn">scene</span>()
+  .<span class="fn">stagger</span>(slots, (el, i) => ({
+    <span class="prop">to</span>: { <span class="prop">transform</span>: () => <span class="fn">fanTransform</span>(i) },
+    <span class="prop">duration</span>: <span class="num">700</span>, <span class="prop">easing</span>: <span class="str">'back-out'</span>,
+  }), { <span class="prop">interval</span>: <span class="num">85</span>, <span class="prop">from</span>: <span class="str">'center'</span> })
+  .<span class="fn">wait</span>(<span class="num">140</span>)
+  .<span class="fn">stagger</span>(cards, {
+    <span class="prop">to</span>: { <span class="prop">transform</span>: <span class="str">'rotateY(180deg)'</span> },
+    <span class="prop">duration</span>: <span class="num">650</span>, <span class="prop">easing</span>: <span class="str">'back-out'</span>,
+  }, { <span class="prop">interval</span>: <span class="num">100</span> })
+  .<span class="fn">play</span>();</code></pre>
       </details>
     </section>
 
@@ -1745,6 +2021,155 @@ squashScene.<span class="fn">play</span>();</code></pre>
       squashStopBtn.classList.add('active');
       squashPlayBtn.classList.remove('active');
     });
+
+    // ============================================================
+    // 12 — Spell sigil draw
+    // ============================================================
+    const sigilAura = $('#sigil-aura');
+    const sigilCore = $('#sigil-core');
+    const sigilPaths = Array.from(document.querySelectorAll('[data-sigil-path]'));
+    const sigilNodes = Array.from(document.querySelectorAll('.sigil-node'));
+    const sigilReplayBtn = $('#sigil-replay');
+
+    let sigilScene = null;
+    function playSigil() {
+      if (sigilScene) sigilScene.stop();
+
+      const draw = scene();
+      sigilPaths.forEach((path) => {
+        const length = Math.ceil(path.getTotalLength());
+        draw.set(path, {
+          strokeDasharray: length,
+          strokeDashoffset: length,
+          opacity: 0.18,
+        });
+      });
+
+      draw
+        .set(sigilNodes, { opacity: 0, transform: 'scale(0.2)' })
+        .set(sigilCore, { opacity: 0, transform: 'scale(0.4) rotate(-45deg)' })
+        .set(sigilAura, {
+          transform: 'scale(1)',
+          filter: 'drop-shadow(0 0 0px rgba(94,202,187,0))',
+        })
+        .stagger(sigilPaths, (path) => ({
+          from: {
+            strokeDashoffset: Math.ceil(path.getTotalLength()),
+            opacity: 0.18,
+          },
+          to: { strokeDashoffset: 0, opacity: 1 },
+          duration: 700,
+          easing: 'ease-in-out',
+        }), { interval: 110 })
+        .parallel((p) => {
+          p.stagger(sigilNodes, {
+            from: { opacity: 0, transform: 'scale(0.2)' },
+            to: { opacity: 1, transform: 'scale(1)' },
+            duration: 420,
+            easing: 'back-out',
+          }, { interval: 70, from: 'center' });
+          p.fromTo(
+            sigilCore,
+            { opacity: 0, transform: 'scale(0.4) rotate(-45deg)' },
+            { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+            { duration: 900, easing: 'elastic-out', delay: 100 }
+          );
+        })
+        .frames(sigilAura, {
+          0: {
+            transform: 'scale(1)',
+            filter: 'drop-shadow(0 0 0px rgba(94,202,187,0))',
+          },
+          45: {
+            transform: 'scale(1.035)',
+            filter: 'drop-shadow(0 0 18px rgba(94,202,187,0.7))',
+          },
+          100: {
+            transform: 'scale(1)',
+            filter: 'drop-shadow(0 0 8px rgba(94,202,187,0.28))',
+          },
+        }, { duration: 800, easing: 'ease-in-out' });
+
+      sigilScene = draw;
+      sigilScene.play();
+    }
+
+    sigilReplayBtn.addEventListener('click', playSigil);
+    setTimeout(playSigil, 1800);
+
+    // ============================================================
+    // 13 — Arcana card deal
+    // ============================================================
+    const arcanaStage = $('#arcana-stage');
+    const arcanaSlots = Array.from(document.querySelectorAll('.arcana-slot'));
+    const arcanaCards = Array.from(document.querySelectorAll('.arcana-card'));
+    const arcanaDealBtn = $('#arcana-deal');
+    const arcanaGatherBtn = $('#arcana-gather');
+
+    let arcanaScene = null;
+    let arcanaDealt = false;
+
+    function fanTransform(i) {
+      const offset = i - (arcanaSlots.length - 1) / 2;
+      const cardWidth = arcanaSlots[i].offsetWidth;
+      const available = arcanaStage.clientWidth - cardWidth - 36;
+      const spacing = Math.max(38, Math.min(84, available / (arcanaSlots.length - 1)));
+      const x = offset * spacing;
+      const y = Math.abs(offset) * 11 - 8;
+      return `translate(${x}px, ${y}px) rotate(${offset * 7.5}deg)`;
+    }
+
+    function syncArcanaControls(busy = false) {
+      arcanaDealBtn.disabled = busy || arcanaDealt;
+      arcanaGatherBtn.disabled = busy || !arcanaDealt;
+      arcanaDealBtn.classList.toggle('active', !busy && !arcanaDealt);
+      arcanaGatherBtn.classList.toggle('active', !busy && arcanaDealt);
+    }
+
+    async function dealArcana() {
+      syncArcanaControls(true);
+      arcanaScene = scene()
+        .set(arcanaSlots, { transform: 'translate(0px, 0px) rotate(0deg)' })
+        .set(arcanaCards, { transform: 'rotateY(0deg)' })
+        .stagger(arcanaSlots, (el, i) => ({
+          to: { transform: () => fanTransform(i) },
+          duration: 700,
+          easing: 'back-out',
+        }), { interval: 85, from: 'center' })
+        .wait(140)
+        .stagger(arcanaCards, {
+          to: { transform: 'rotateY(180deg)' },
+          duration: 650,
+          easing: 'back-out',
+        }, { interval: 100, from: 'start' });
+
+      await arcanaScene.play();
+      arcanaDealt = true;
+      syncArcanaControls();
+    }
+
+    async function gatherArcana() {
+      syncArcanaControls(true);
+      arcanaScene = scene()
+        .stagger(arcanaCards, {
+          to: { transform: 'rotateY(0deg)' },
+          duration: 500,
+          easing: 'ease-in-out',
+        }, { interval: 75, from: 'end' })
+        .wait(100)
+        .stagger(arcanaSlots, {
+          to: { transform: 'translate(0px, 0px) rotate(0deg)' },
+          duration: 600,
+          easing: 'back-in-out',
+        }, { interval: 65, from: 'edges' });
+
+      await arcanaScene.play();
+      arcanaDealt = false;
+      syncArcanaControls();
+    }
+
+    arcanaDealBtn.addEventListener('click', dealArcana);
+    arcanaGatherBtn.addEventListener('click', gatherArcana);
 
     // ---- Copy install command ----
     const installValue = $('.install-value');
