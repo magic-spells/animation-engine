@@ -144,7 +144,7 @@ clamp to its first/last value.
 
 ### Physics steps
 
-Pass `physics` instead of `duration`/`easing` and the step's progress is driven by a `PhysicsEngine` spring: its emitted `change.progress` is mapped straight into `getFrame` (overshoot past 1 is desired and extrapolates), and the step completes on the spring's settle promise.
+Pass `physics` instead of `duration`/`easing` and the step's progress is driven by a `PhysicsEngine` spring: its emitted `change.progress` is mapped straight into `getFrame` (overshoot past 1 is desired and extrapolates), and the step completes on the spring's settle promise. Both parameters are optional — defaults are `attraction: 0.026`, `friction: 0.17`.
 
 ```js
 scene().fromTo(el, { transform: 'translateX(0px)' }, { transform: 'translateX(300px)' }, {

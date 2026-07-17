@@ -251,7 +251,10 @@ var O = class {
 	}
 }, k = class {
 	constructor({ el: e, frameEngine: t, endStyles: n, physics: r, onUpdate: i }) {
-		this.el = e, this.fe = t, this.endStyles = n, this.physics = r || {}, this.onUpdate = i, this._done = !1, this.engine = null, this._onChange = null, this._lastStyles = null, this.promise = new Promise((e) => {
+		this.el = e, this.fe = t, this.endStyles = n, this.physics = {
+			friction: .17,
+			...r
+		}, this.onUpdate = i, this._done = !1, this.engine = null, this._onChange = null, this._lastStyles = null, this.promise = new Promise((e) => {
 			this._resolve = e;
 		});
 	}
