@@ -1,9 +1,9 @@
 /**
  * Lazy value helpers.
  *
- * The engine treats a bare zero-arg function anywhere a value is expected as a
- * "lazy value", re-evaluated at the start of each step every iteration. That is
- * what makes looping snow respawn at a fresh random spot each loop: the random
+ * The engine treats a function anywhere a value is expected as a "lazy value",
+ * re-evaluated for each element at the start of each step every iteration. That
+ * is what makes looping snow respawn at a fresh random spot each loop: the random
  * is resolved at step start, never baked in at build time.
  */
 
@@ -47,21 +47,25 @@ export function pick(array) {
  * Resolve a possibly-lazy value: call it if it's a function, otherwise return
  * it unchanged.
  * @template T
- * @param {T | (() => T)} value
+ * @param {T | ((el?: object, i?: number) => T)} value
+ * @param {object} [el]
+ * @param {number} [i]
  * @returns {T}
  */
-export function resolveValue(value) {
-  return typeof value === 'function' ? value() : value;
+export function resolveValue(value, el, i) {
+  return typeof value === 'function' ? value(el, i) : value;
 }
 
 /**
  * Resolve every value in a style object (each may be lazy).
  * @param {Object<string, *>} styles
+ * @param {object} [el]
+ * @param {number} [i]
  * @returns {Object<string, string | number>}
  */
-export function resolveStyles(styles) {
+export function resolveStyles(styles, el, i) {
   const out = {};
-  for (const key in styles) out[key] = resolveValue(styles[key]);
+  for (const key in styles) out[key] = resolveValue(styles[key], el, i);
   return out;
 }
 
@@ -69,10 +73,12 @@ export function resolveStyles(styles) {
  * Resolve a raw frame-engine keyframe map ({0: {...}, 100: {...}}), resolving
  * any lazy values inside each keyframe's style object.
  * @param {Object<number, Object<string, *>>} keyframes
+ * @param {object} [el]
+ * @param {number} [i]
  * @returns {Object<number, Object<string, string | number>>}
  */
-export function resolveKeyframes(keyframes) {
+export function resolveKeyframes(keyframes, el, i) {
   const out = {};
-  for (const pct in keyframes) out[pct] = resolveStyles(keyframes[pct]);
+  for (const pct in keyframes) out[pct] = resolveStyles(keyframes[pct], el, i);
   return out;
 }

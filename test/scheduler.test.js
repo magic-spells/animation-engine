@@ -19,7 +19,15 @@ async function advance(ms, step = 16) {
 }
 
 /** A minimal element-like target. */
-const el = (extra = {}) => ({ style: {}, isConnected: true, ...extra });
+const el = (extra = {}) => ({
+  style: {
+    setProperty(key, value) {
+      this[key] = value;
+    },
+  },
+  isConnected: true,
+  ...extra,
+});
 
 // ---- Sequencing -------------------------------------------------------------
 
@@ -53,6 +61,69 @@ test('.set applies instantly and seeds the from-state for a later .to', async ()
   await advance(120);
   await done;
   assert.equal(box.style.opacity, '1', '.to flowed from the seeded 0 to 1');
+});
+
+test('CSS custom properties are written by .set() and tween end states', async () => {
+  const setTarget = el();
+  await scene().set(setTarget, { '--accent': 42 }).play();
+  assert.equal(setTarget.style['--accent'], '42');
+
+  const fallbackTarget = { style: {}, isConnected: true };
+  await scene().set(fallbackTarget, { '--accent': 'blue' }).play();
+  assert.equal(fallbackTarget.style['--accent'], 'blue', 'plain style objects use assignment');
+
+  const tweenTarget = el();
+  const done = scene()
+    .fromTo(tweenTarget, { '--progress': 0 }, { '--progress': 100 }, {
+      duration: 32,
+      easing: 'linear',
+    })
+    .play();
+
+  await flush();
+  await advance(32);
+  await done;
+  assert.equal(tweenTarget.style['--progress'], '100');
+});
+
+test('style value functions resolve per element with the element and index', async () => {
+  const els = [el(), el(), el()];
+  for (const element of els) element.style.left = '0px';
+  const calls = [];
+  const value = (element, i) => {
+    calls.push([element, i]);
+    return `${(i + 1) * 10}px`;
+  };
+
+  const done = scene().to(els, { left: value }, { duration: 32, easing: 'linear' }).play();
+  await flush();
+  await advance(32);
+  await done;
+
+  assert.deepEqual(calls, els.map((element, i) => [element, i]));
+  assert.deepEqual(els.map((element) => element.style.left), ['10px', '20px', '30px']);
+});
+
+test('onUpdate runs after each write with increasing progress and a final 1', async () => {
+  const box = el();
+  const updates = [];
+  const done = scene()
+    .fromTo(box, { opacity: 0 }, { opacity: 1 }, {
+      duration: 100,
+      easing: 'linear',
+      onUpdate(styles, progress, element) {
+        updates.push({ progress, style: styles.opacity, written: element.style.opacity, element });
+      },
+    })
+    .play();
+
+  await flush();
+  await advance(100, 25);
+  await done;
+
+  assert.deepEqual(updates.map(({ progress }) => progress), [0, 0.25, 0.5, 0.75, 1]);
+  assert.ok(updates.every(({ style, written }) => style === written), 'styles are written first');
+  assert.ok(updates.every(({ element }) => element === box));
 });
 
 // ---- Parallel ---------------------------------------------------------------
@@ -115,6 +186,28 @@ test('stagger accepts a (el, i) => config function', async () => {
   await done;
   assert.equal(els[0].style.opacity, '0.5');
   assert.equal(els[1].style.opacity, '1');
+});
+
+test('stagger item onUpdate receives each element final state', async () => {
+  const els = [el(), el()];
+  const updates = [];
+  await scene()
+    .stagger(
+      els,
+      {
+        from: { opacity: 0 },
+        to: { opacity: 1 },
+        duration: 0,
+        onUpdate: (styles, progress, element) => updates.push([styles.opacity, progress, element]),
+      },
+      { interval: 0 }
+    )
+    .play();
+
+  assert.deepEqual(updates, [
+    ['1', 1, els[0]],
+    ['1', 1, els[1]],
+  ]);
 });
 
 test('stagger center ranks are normalized for an even element count', async () => {
@@ -409,17 +502,22 @@ test('an inline functional transform is used as the first .to() from-state', asy
 
 test('a physics step resolves and lands on its end state (Node no-rAF fallback)', async () => {
   const a = el();
+  const updates = [];
   const s = scene().fromTo(
     a,
     { opacity: 0 },
     { opacity: 1 },
-    { physics: { attraction: 0.1, friction: 0.3 } }
+    {
+      physics: { attraction: 0.1, friction: 0.3 },
+      onUpdate: (styles, progress, element) => updates.push([styles.opacity, progress, element]),
+    }
   );
 
   const done = s.play();
   await flush();
   await done;
   assert.equal(a.style.opacity, '1', 'physics step settled at its end value');
+  assert.deepEqual(updates, [['1', 1, a]], 'the snapped end-state invokes onUpdate');
 });
 
 test('a physics step animates through intermediate progress on the rAF path', async () => {

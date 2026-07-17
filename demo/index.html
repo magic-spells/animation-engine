@@ -210,6 +210,22 @@
       margin-bottom: 1.5rem;
     }
 
+    /* ---- Word entrances ---- */
+    .word-stage {
+      display: flex; align-items: center; justify-content: center;
+      height: 170px; padding: 1rem;
+    }
+    .word-line {
+      font-family: var(--font-display); font-weight: 400;
+      font-size: clamp(1.5rem, 3.6vw, 2.5rem);
+      color: var(--cream); text-align: center; line-height: 1.4;
+      max-width: 92%;
+    }
+    .word-line .word-in {
+      display: inline-block; opacity: 0;
+      will-change: transform, opacity, filter;
+    }
+
     /* ---- Controls / buttons ---- */
     .controls { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
 
@@ -599,32 +615,41 @@
     </div>
     <div class="install-item install-item-size">
       <span class="install-label">Size (gzip)</span>
-      <span class="install-size">5.1 kB</span>
+      <span class="install-size">5.8 kB</span>
     </div>
   </div>
 
   <!-- ======== DEMOS ======== -->
   <main class="demos">
 
-    <!-- ---- 01 Stagger intro ---- -->
+    <!-- ---- 01 Word entrances ---- -->
     <section class="demo-section">
       <div class="demo-header">
         <span class="demo-index">01</span>
-        <h2>Staggered word intro</h2>
+        <h2>Word entrances</h2>
       </div>
-      <p class="demo-desc">The headline is split into per-character spans, then a single <em>.stagger()</em> fans a <em>pick()</em>-varied entrance across them — each letter drawn from a random pool of effects (rise, spin, pop, blur, fade) with jittered timing.</p>
+      <p class="demo-desc">The hero headline staggers a random effect per character; this is the same trick at word scale — but nothing is random. Each word is handed a <em>different</em> entrance by index: drop, spin, pop, blur, flip, slide, zoom, rise. The stagger callback receives <em>(el, i)</em>, so it can deal effects like cards.</p>
+      <div class="stage word-stage" id="word-stage">
+        <p class="word-line" id="word-line">Every single word makes its own grand entrance</p>
+      </div>
       <div class="controls">
-        <button class="btn" id="stagger-replay">Replay</button>
+        <button class="btn" id="words-replay">Replay</button>
       </div>
       <details class="code-aside">
         <summary>view the scene()</summary>
-        <pre><code><span class="kw">const</span> pool = <span class="fn">pick</span>([riseEffect, spinEffect, popEffect, blurEffect, fadeEffect]);
+        <pre><code><span class="kw">const</span> wordEffects = [
+  { <span class="prop">from</span>: { <span class="prop">opacity</span>: <span class="num">0</span>, <span class="prop">transform</span>: <span class="str">'translateY(-1.4em)'</span> },  <span class="prop">to</span>: { … }, <span class="prop">easing</span>: <span class="str">'bounce-out'</span> },  <span class="cm">// drop</span>
+  { <span class="prop">from</span>: { <span class="prop">opacity</span>: <span class="num">0</span>, <span class="prop">transform</span>: <span class="str">'rotate(-180deg) scale(0.3)'</span> }, … },                <span class="cm">// spin</span>
+  { <span class="prop">from</span>: { <span class="prop">opacity</span>: <span class="num">0</span>, <span class="prop">transform</span>: <span class="str">'scale(0.1)'</span> }, <span class="prop">easing</span>: <span class="str">'elastic-out'</span>, … },        <span class="cm">// pop</span>
+  { <span class="prop">from</span>: { <span class="prop">opacity</span>: <span class="num">0</span>, <span class="prop">filter</span>: <span class="str">'blur(14px)'</span> }, … },                                    <span class="cm">// blur</span>
+  <span class="cm">// …flip, slide, zoom, rise</span>
+];
 
 <span class="fn">scene</span>()
   .<span class="fn">stagger</span>(
-    chars,
-    (el, i) => <span class="fn">pool</span>(),          <span class="cm">// a fresh effect per letter</span>
-    { <span class="prop">interval</span>: <span class="num">60</span>, <span class="prop">jitter</span>: <span class="num">0.4</span> }
+    words,
+    (el, i) => wordEffects[i % wordEffects.length],  <span class="cm">// dealt by index, not pick()</span>
+    { <span class="prop">interval</span>: <span class="num">150</span> }
   )
   .<span class="fn">play</span>();</code></pre>
       </details>
@@ -825,7 +850,10 @@
       </div>
       <details class="code-aside">
         <summary>view the scene()</summary>
-        <pre><code><span class="fn">scene</span>()
+        <pre><code><span class="cm">// The chase's own spring — snappier than the compare demo's sliders</span>
+<span class="kw">const</span> CHASE_SPRING = { <span class="prop">attraction</span>: <span class="num">0.08</span>, <span class="prop">friction</span>: <span class="num">0.14</span> };
+
+<span class="fn">scene</span>()
   .<span class="fn">set</span>(springOrb, {
     <span class="prop">transform</span>: () => <span class="str">`translate(${(springStage.clientWidth - springOrb.offsetWidth) / 2}px, ${(springStage.clientHeight - springOrb.offsetHeight) / 2}px)`</span>,
   })
@@ -840,7 +868,7 @@ springStage.<span class="fn">addEventListener</span>(<span class="str">'pointerd
 
   <span class="fn">scene</span>()
     .<span class="fn">to</span>(springOrb, { <span class="prop">transform</span>: <span class="str">`translate(${x}px, ${y}px)`</span> }, {
-      <span class="prop">physics</span>: { <span class="prop">attraction</span>: <span class="num">0.03</span>, <span class="prop">friction</span>: <span class="num">0.25</span> },
+      <span class="prop">physics</span>: CHASE_SPRING,
     })
     .<span class="fn">play</span>();
 
@@ -861,7 +889,7 @@ springStage.<span class="fn">addEventListener</span>(<span class="str">'pointerd
 springCenterBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</span>, () => {
   <span class="fn">scene</span>().<span class="fn">to</span>(springOrb, {
     <span class="prop">transform</span>: () => <span class="str">`translate(${(springStage.clientWidth - springOrb.offsetWidth) / 2}px, ${(springStage.clientHeight - springOrb.offsetHeight) / 2}px)`</span>,
-  }, { <span class="prop">physics</span>: { <span class="prop">attraction</span>: <span class="num">0.03</span>, <span class="prop">friction</span>: <span class="num">0.25</span> } }).<span class="fn">play</span>();
+  }, { <span class="prop">physics</span>: CHASE_SPRING }).<span class="fn">play</span>();
 });</code></pre>
       </details>
     </section>
@@ -1039,7 +1067,7 @@ squashScene.<span class="fn">play</span>();</code></pre>
     }
 
     // ============================================================
-    // 01 — Staggered word intro
+    // Hero intro (per-character stagger on the headline)
     // ============================================================
     // Local splitter: wrap each character in an inline-block span.
     function splitChars(el) {
@@ -1098,11 +1126,75 @@ squashScene.<span class="fn">play</span>();</code></pre>
 
     const heroReplayBtn = $('#hero-replay');
     if (heroReplayBtn) heroReplayBtn.addEventListener('click', playHeroIntro);
-    const staggerReplayBtn = $('#stagger-replay');
-    if (staggerReplayBtn) staggerReplayBtn.addEventListener('click', playHeroIntro);
 
     // Kick off shortly after load.
     setTimeout(playHeroIntro, 350);
+
+    // ============================================================
+    // 01 — Word entrances
+    // ============================================================
+    // Split the sentence into per-word spans (spaces stay as plain text nodes
+    // so the line wraps naturally).
+    const wordLine = $('#word-line');
+    const lineWords = [];
+    if (wordLine) {
+      const text = wordLine.textContent.trim().split(/\s+/);
+      wordLine.textContent = '';
+      text.forEach((w, i) => {
+        if (i) wordLine.appendChild(document.createTextNode(' '));
+        const span = document.createElement('span');
+        span.className = 'word-in';
+        span.textContent = w;
+        wordLine.appendChild(span);
+        lineWords.push(span);
+      });
+    }
+
+    // Eight words, eight distinct entrances — dealt by index, not at random.
+    const wordEffects = [
+      { from: { opacity: 0, transform: 'translateY(-1.4em)' },                          to: { opacity: 1, transform: 'translateY(0em)' },                          duration: 700, easing: 'bounce-out' },   // drop
+      { from: { opacity: 0, transform: 'rotate(-180deg) scale(0.3)' },                  to: { opacity: 1, transform: 'rotate(0deg) scale(1)' },                    duration: 620, easing: 'back-out' },     // spin
+      { from: { opacity: 0, transform: 'scale(0.1)' },                                  to: { opacity: 1, transform: 'scale(1)' },                                 duration: 820, easing: 'elastic-out' },  // pop
+      { from: { opacity: 0, filter: 'blur(14px)' },                                     to: { opacity: 1, filter: 'blur(0px)' },                                   duration: 640, easing: 'ease-out' },     // blur
+      { from: { opacity: 0, transform: 'perspective(400px) rotateX(-95deg)' },          to: { opacity: 1, transform: 'perspective(400px) rotateX(0deg)' },         duration: 640, easing: 'back-out' },     // flip
+      { from: { opacity: 0, transform: 'translateX(-1.2em) skewX(-18deg)' },            to: { opacity: 1, transform: 'translateX(0em) skewX(0deg)' },              duration: 560, easing: 'ease-out' },     // slide
+      { from: { opacity: 0, transform: 'scale(2.6)', filter: 'blur(6px)' },             to: { opacity: 1, transform: 'scale(1)', filter: 'blur(0px)' },            duration: 560, easing: 'ease-out' },     // zoom
+      { from: { opacity: 0, transform: 'translateY(1em) rotate(8deg)' },                to: { opacity: 1, transform: 'translateY(0em) rotate(0deg)' },             duration: 680, easing: 'elastic-out' },  // rise
+    ];
+
+    let wordsScene = null;
+    function playWordEntrances() {
+      if (!lineWords.length) return;
+      if (wordsScene) wordsScene.stop();
+      lineWords.forEach((w) => {
+        w.style.opacity = '0';
+        w.style.transform = 'none';
+        w.style.filter = 'none';
+      });
+      wordsScene = scene().stagger(
+        lineWords,
+        (el, i) => wordEffects[i % wordEffects.length],
+        { interval: 150 }
+      );
+      wordsScene.play();
+    }
+
+    const wordsReplayBtn = $('#words-replay');
+    if (wordsReplayBtn) wordsReplayBtn.addEventListener('click', playWordEntrances);
+
+    // First run once the section scrolls into view (falls back to load-time).
+    const wordStageEl = $('#word-stage');
+    if (wordStageEl && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          playWordEntrances();
+        }
+      }, { threshold: 0.4 });
+      io.observe(wordStageEl);
+    } else {
+      setTimeout(playWordEntrances, 600);
+    }
 
     // ============================================================
     // 02 — Drifting decorations (leaves)
@@ -1458,6 +1550,11 @@ squashScene.<span class="fn">play</span>();</code></pre>
     const springOrb = $('#spring-orb');
     const springCenterBtn = $('#spring-center');
 
+    // The chase's own spring — snappier (higher attraction, lower friction)
+    // than the compare section's slider defaults, so the two demos read as
+    // clearly different physics.
+    const CHASE_SPRING = { attraction: 0.08, friction: 0.14 };
+
     scene()
       .set(springOrb, {
         transform: () => `translate(${(springStage.clientWidth - springOrb.offsetWidth) / 2}px, ${(springStage.clientHeight - springOrb.offsetHeight) / 2}px)`,
@@ -1473,7 +1570,7 @@ squashScene.<span class="fn">play</span>();</code></pre>
 
       scene()
         .to(springOrb, { transform: `translate(${x}px, ${y}px)` }, {
-          physics: { attraction: 0.03, friction: 0.25 },
+          physics: CHASE_SPRING,
         })
         .play();
 
@@ -1494,7 +1591,7 @@ squashScene.<span class="fn">play</span>();</code></pre>
     springCenterBtn.addEventListener('click', () => {
       scene().to(springOrb, {
         transform: () => `translate(${(springStage.clientWidth - springOrb.offsetWidth) / 2}px, ${(springStage.clientHeight - springOrb.offsetHeight) / 2}px)`,
-      }, { physics: { attraction: 0.03, friction: 0.25 } }).play();
+      }, { physics: CHASE_SPRING }).play();
     });
 
     // ============================================================

@@ -63,7 +63,8 @@ iteration boundary and stop when every element target is disconnected from the D
 - `src/dom.js` — target resolution, from-state derivation
 - `src/state.js` — WeakMaps: written styles + active element tweens
 - `src/animation-engine.d.ts` — public TypeScript declarations (keep in sync)
-- `demo/index.html` — showcase page (port 3060)
+- `demo/index.html` — showcase page (port 3060); loads the built UMD, not `src/` — see
+  Demo & GitHub Pages
 
 ## Commands
 
@@ -74,6 +75,26 @@ iteration boundary and stop when every element target is disconnected from the D
   `@magic-spells/*` deps — consumers get them via npm) then `umd` (self-contained
   `dist/animation-engine.min.js`, global `AnimationEngine`). Keep the split; bundling deps
   into the ESM duplicates frame-engine for projects that already use it.
+
+## Demo & GitHub Pages
+
+The demo is served as static files at
+`https://magic-spells.github.io/animation-engine/demo/` straight off `main` — no CI, no
+bundler. That forces two things:
+
+**`dist/` is committed, deliberately.** Pages can only serve what's in the branch. npm does
+NOT need this (`files: ["dist"]` + `prepublishOnly` packs from the working dir regardless of
+git) — don't "clean up" the repo by re-ignoring it without first adding a Pages workflow that
+builds.
+
+**The demo loads `dist/animation-engine.min.js` via script tag** (global `AnimationEngine`),
+not `../src/`. It must: `src/` bare-imports three `@magic-spells/*` deps, which a static host
+can't resolve — only the UMD is self-contained. This is why animation-engine's demo differs
+from frame-engine's, whose dependency-free `src/` can be imported directly.
+
+So: **`src/` edits are invisible to the demo (locally AND deployed) until `npm run build`,
+and invisible on Pages until `dist/` is committed.** Rebuild + commit `dist/` alongside any
+change meant to show up in the demo, or keep `npm run prod` watching while working on it.
 
 ## Physics-engine integration gotchas
 

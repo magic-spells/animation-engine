@@ -5,10 +5,10 @@
 /** Keyframe map: percent positions (0-100) → CSS style objects (camelCase props). */
 export type Keyframes = Record<number, Record<string, StyleValue>>;
 
-/** A style value may be a string, number, or a lazy zero-arg function producing one. */
-export type StyleValue = string | number | (() => string | number);
+/** A style value may be a string, number, or a per-element lazy function producing one. */
+export type StyleValue = string | number | ((el?: Element, i?: number) => string | number);
 
-/** A style object whose values may be lazy. */
+/** A style object whose values may be lazy. CSS custom-property (`--name`) keys are supported. */
 export type Styles = Record<string, StyleValue>;
 
 /** Anything accepted as an animation target. */
@@ -50,6 +50,7 @@ export interface StepOptions {
   easing?: Easing;
   delay?: Lazy<number>;
   physics?: PhysicsConfig;
+  onUpdate?: (styles: Record<string, string>, progress: number, el: Element) => void;
 }
 
 /** Config for a stagger item (or the return of a `(el, i) => config` function). */
@@ -61,6 +62,7 @@ export interface StaggerItemConfig {
   easing?: Easing;
   delay?: Lazy<number>;
   physics?: PhysicsConfig;
+  onUpdate?: (styles: Record<string, string>, progress: number, el: Element) => void;
 }
 
 /** Stagger sequencing options. */

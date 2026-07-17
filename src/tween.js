@@ -9,6 +9,7 @@
  */
 
 import ticker from './ticker.js';
+import { writeStyles } from './dom.js';
 import { activeElementTweens, claimElement, recordStyles } from './state.js';
 
 export default class Tween {
@@ -20,14 +21,16 @@ export default class Tween {
    * @param {number} config.duration - Duration in ms (<= 0 completes instantly).
    * @param {(t: number) => number} config.easing - Eased progress function.
    * @param {() => number} config.timeScale - Reads the owning scene's rate multiplier.
+   * @param {(styles: Object<string, string>, progress: number, el: object) => void} [config.onUpdate]
    */
-  constructor({ el, frameEngine, endStyles, duration, easing, timeScale }) {
+  constructor({ el, frameEngine, endStyles, duration, easing, timeScale, onUpdate }) {
     this.el = el;
     this.fe = frameEngine;
     this.endStyles = endStyles;
     this.duration = duration;
     this.easing = easing;
     this.timeScale = timeScale;
+    this.onUpdate = onUpdate;
 
     this.elapsed = 0;
     this._done = false;
@@ -50,7 +53,8 @@ export default class Tween {
 
     if (this.duration <= 0) {
       this._lastStyles = this.endStyles;
-      Object.assign(this.el.style, this.endStyles);
+      writeStyles(this.el, this.endStyles);
+      if (this.onUpdate) this.onUpdate(this.endStyles, 1, this.el);
       this._finish();
       return this.promise;
     }
@@ -71,7 +75,8 @@ export default class Tween {
     const t = this.elapsed / this.duration;
     if (t >= 1) {
       this._lastStyles = this.endStyles;
-      Object.assign(this.el.style, this.endStyles);
+      writeStyles(this.el, this.endStyles);
+      if (this.onUpdate) this.onUpdate(this.endStyles, 1, this.el);
       this._finish();
       return;
     }
@@ -81,7 +86,8 @@ export default class Tween {
   _apply(t) {
     const styles = this.fe.getFrame(this.easing(t));
     this._lastStyles = styles;
-    Object.assign(this.el.style, styles);
+    writeStyles(this.el, styles);
+    if (this.onUpdate) this.onUpdate(styles, t, this.el);
   }
 
   _cleanup() {

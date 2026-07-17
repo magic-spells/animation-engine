@@ -14,7 +14,7 @@ import ticker from './ticker.js';
 import { resolveEasing } from './easings.js';
 import { resolveValue, resolveStyles, resolveKeyframes } from './values.js';
 import { fillSparseKeyframes } from './keyframes.js';
-import { resolveTargets, resolveFromState } from './dom.js';
+import { resolveTargets, resolveFromState, writeStyles } from './dom.js';
 import { claimElement, recordStyles } from './state.js';
 import Tween from './tween.js';
 import PhysicsTween from './physics-tween.js';
@@ -371,12 +371,12 @@ export default class Scene extends EventEmitter {
   }
 
   _applySet(step) {
-    const styles = resolveStyles(step.styles);
-    for (const el of resolveTargets(step.target)) {
+    resolveTargets(step.target).forEach((el, i) => {
+      const styles = resolveStyles(step.styles, el, i);
       claimElement(el);
-      Object.assign(el.style, styles);
+      writeStyles(el, styles);
       recordStyles(el, styles);
-    }
+    });
   }
 
   async _runTween(step, reversed, run) {
@@ -391,19 +391,23 @@ export default class Scene extends EventEmitter {
       : resolveValue(opts.duration) ?? resolveValue(this._defaults.duration) ?? DEFAULT_DURATION;
     const easing = resolveEasing(opts.easing ?? this._defaults.easing ?? DEFAULT_EASING);
 
-    // Resolve lazy style values once per step start (shared across elements).
-    const resolved = this._resolveStepValues(step);
-
     if (delay > 0) {
       await this._scaledWait(delay, run).promise;
       if (run.stopped || run.finished) return;
     }
 
-    const proms = els.map((el) => {
+    const proms = els.map((el, i) => {
+      const resolved = this._resolveStepValues(step, el, i);
       claimElement(el);
       const { fe, endStyles } = this._buildFrameEngine(step, el, reversed, resolved);
       const tween = isPhysics
-        ? new PhysicsTween({ el, frameEngine: fe, endStyles, physics: opts.physics })
+        ? new PhysicsTween({
+            el,
+            frameEngine: fe,
+            endStyles,
+            physics: opts.physics,
+            onUpdate: opts.onUpdate,
+          })
         : new Tween({
             el,
             frameEngine: fe,
@@ -411,6 +415,7 @@ export default class Scene extends EventEmitter {
             duration,
             easing,
             timeScale: () => this._timeScale,
+            onUpdate: opts.onUpdate,
           });
       const handle = { cancel: () => tween.cancel() };
       run.active.add(handle);
@@ -454,9 +459,15 @@ export default class Scene extends EventEmitter {
     const easing = resolveEasing(cfg.easing ?? this._defaults.easing ?? DEFAULT_EASING);
 
     claimElement(el);
-    const { fe, endStyles } = this._buildFrameEngineFromConfig(cfg, el, reversed);
+    const { fe, endStyles } = this._buildFrameEngineFromConfig(cfg, el, reversed, i);
     const tween = isPhysics
-      ? new PhysicsTween({ el, frameEngine: fe, endStyles, physics: cfg.physics })
+      ? new PhysicsTween({
+          el,
+          frameEngine: fe,
+          endStyles,
+          physics: cfg.physics,
+          onUpdate: cfg.onUpdate,
+        })
       : new Tween({
           el,
           frameEngine: fe,
@@ -464,6 +475,7 @@ export default class Scene extends EventEmitter {
           duration,
           easing,
           timeScale: () => this._timeScale,
+          onUpdate: cfg.onUpdate,
         });
 
     const handle = { cancel: () => tween.cancel() };
@@ -475,22 +487,24 @@ export default class Scene extends EventEmitter {
   // ---- FrameEngine construction ----
 
   /**
-   * Resolve the lazy style/keyframe values for a step, once, at step start.
+   * Resolve the lazy style/keyframe values for one element at step start.
    * @param {object} step
+   * @param {object} el
+   * @param {number} i
    * @returns {object}
    */
-  _resolveStepValues(step) {
+  _resolveStepValues(step, el, i) {
     switch (step.type) {
       case 'to':
       case 'from':
-        return { styles: resolveStyles(step.styles) };
+        return { styles: resolveStyles(step.styles, el, i) };
       case 'fromTo':
         return {
-          fromStyles: resolveStyles(step.fromStyles),
-          toStyles: resolveStyles(step.toStyles),
+          fromStyles: resolveStyles(step.fromStyles, el, i),
+          toStyles: resolveStyles(step.toStyles, el, i),
         };
       case 'frames':
-        return { keyframes: fillSparseKeyframes(resolveKeyframes(step.keyframes)) };
+        return { keyframes: fillSparseKeyframes(resolveKeyframes(step.keyframes, el, i)) };
       default:
         return {};
     }
@@ -533,15 +547,15 @@ export default class Scene extends EventEmitter {
    * Build a FrameEngine from a stagger item config.
    * @returns {{ fe: FrameEngine, endStyles: Object<string, string> }}
    */
-  _buildFrameEngineFromConfig(cfg, el, reversed) {
+  _buildFrameEngineFromConfig(cfg, el, reversed, i) {
     let keyframes;
 
     if (cfg.keyframes) {
-      const kf = fillSparseKeyframes(resolveKeyframes(cfg.keyframes));
+      const kf = fillSparseKeyframes(resolveKeyframes(cfg.keyframes, el, i));
       keyframes = reversed ? reverseKeyframes(kf) : kf;
     } else {
-      let fromStyles = cfg.from ? resolveStyles(cfg.from) : null;
-      let toStyles = cfg.to ? resolveStyles(cfg.to) : null;
+      let fromStyles = cfg.from ? resolveStyles(cfg.from, el, i) : null;
+      let toStyles = cfg.to ? resolveStyles(cfg.to, el, i) : null;
 
       if (fromStyles && !toStyles) toStyles = resolveFromState(el, fromStyles);
       else if (!fromStyles && toStyles) fromStyles = resolveFromState(el, toStyles);
@@ -574,13 +588,14 @@ export default class Scene extends EventEmitter {
       case 'from':
       case 'fromTo':
       case 'frames': {
-        const resolved = this._resolveStepValues(step);
-        for (const el of resolveTargets(step.target)) {
+        resolveTargets(step.target).forEach((el, i) => {
+          const resolved = this._resolveStepValues(step, el, i);
           claimElement(el);
           const { endStyles } = this._buildFrameEngine(step, el, false, resolved);
-          Object.assign(el.style, endStyles);
+          writeStyles(el, endStyles);
           recordStyles(el, endStyles);
-        }
+          if (step.opts.onUpdate) step.opts.onUpdate(endStyles, 1, el);
+        });
         return;
       }
 
@@ -593,9 +608,10 @@ export default class Scene extends EventEmitter {
         els.forEach((el, i) => {
           const cfg = typeof step.config === 'function' ? step.config(el, i) : { ...step.config };
           claimElement(el);
-          const { endStyles } = this._buildFrameEngineFromConfig(cfg, el, false);
-          Object.assign(el.style, endStyles);
+          const { endStyles } = this._buildFrameEngineFromConfig(cfg, el, false, i);
+          writeStyles(el, endStyles);
           recordStyles(el, endStyles);
+          if (cfg.onUpdate) cfg.onUpdate(endStyles, 1, el);
         });
         return;
       }

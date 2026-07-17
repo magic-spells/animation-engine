@@ -13,6 +13,12 @@ A Scene is an **async chain** (run step → await completion → next), not a fi
 
 [**Live Demo**](https://magic-spells.github.io/animation-engine/demo/)
 
+## Size & scope
+
+**5.8 kB** gzipped (ESM — the two engine deps install alongside via npm) · **10.8 kB** gzipped fully self-contained (UMD, script-tag ready).
+
+That number is small because the scope is deliberate. You get sequencing, springs, staggers, loops, lazy randomness, and interruption handling. You do **not** get a scrubbing playhead — so no `seek()`, `pause()`/`resume()`, mid-flight `reverse()`, or scroll-linked animation — and no SVG toolkit (line drawing, motion paths, morphing) or draggables. If your project leans on those, reach for GSAP or anime.js; they're excellent at exactly the things this engine trades away for springs and size.
+
 ## Install
 
 ```bash
@@ -39,7 +45,9 @@ await intro.play();
 
 ### Targets
 
-Everywhere a target is accepted it may be an `Element`, an `Element[]`, a `NodeList`, or a CSS selector string. Passing multiple elements to `.to()` / `.frames()` applies the same animation to all of them.
+Everywhere a target is accepted it may be an `Element`, an `Element[]`, a `NodeList`, or a CSS selector string. Passing multiple elements to `.to()` / `.frames()` applies the same animation to all of them — though any function values in the styles are resolved fresh per element (see Lazy values), so each element can still get its own numbers.
+
+Style objects may include CSS custom properties (`'--glow': '0.5'`); they're written via `setProperty()` and otherwise behave like any other style key.
 
 ### From-state tracking
 
@@ -47,7 +55,19 @@ The engine keeps a module-level `WeakMap` of _element → the last styles it wro
 
 ### Lazy values
 
-Any value that follows can be a **zero-arg function**, re-evaluated at the start of each step every iteration: style values, `duration`, `delay`, `.wait()` ms, and stagger `interval`. This is what makes looping snow respawn at a fresh random spot each loop — the random is resolved at step start, never baked in at build time.
+Any value that follows can be a **function**, re-evaluated at the start of each step every iteration: style values, `duration`, `delay`, `.wait()` ms, and stagger `interval`. This is what makes looping snow respawn at a fresh random spot each loop — the random is resolved at step start, never baked in at build time.
+
+**Style-value functions resolve per element** and receive `(el, i)`, so a multi-element step can vary per target — `rand()`/`pick()` ignore the args and simply roll fresh per element:
+
+```js
+// every dot gets its own column and color
+scene().to('.dot', {
+  left: rand(0, 100, '%'),                        // fresh random per dot
+  background: (el, i) => (i % 2 ? '#f0f' : '#0ff'), // or use the element/index directly
+});
+```
+
+Timing values (`duration`, `delay`, `.wait()`, stagger `interval`) are resolved once per step — use `.stagger()` with a config function for per-element timing.
 
 ```js
 import { rand, pick } from '@magic-spells/animation-engine';
@@ -117,7 +137,8 @@ clamp to its first/last value.
   duration: 400,          // ms, or a lazy () => ms  (default: from `defaults`, else 400)
   easing: 'ease',         // name | 'cubic-bezier(…)' | (t) => t   (default 'ease')
   delay: 0,               // ms before this step's tween starts; lazy ok
-  physics: { attraction, friction } // replaces duration + easing (see below)
+  physics: { attraction, friction }, // replaces duration + easing (see below)
+  onUpdate: (styles, progress, el) => {} // per frame, after styles are written
 }
 ```
 
@@ -132,6 +153,17 @@ scene().fromTo(el, { transform: 'translateX(0px)' }, { transform: 'translateX(30
 ```
 
 Note: physics steps ignore `timeScale` (the spring runs on its own internal clock) and, being duration-less, cannot be given a fixed length. For a springy _but sequenceable and time-boxed_ feel, use an overshoot easing (`'back-out'`, `'elastic-out'`) on a normal timed step instead.
+
+### onUpdate — driving things that aren't `el.style`
+
+`onUpdate(styles, progress, el)` fires every frame after the styles are written (and once more with the end state at `progress: 1`). On timed steps `progress` is linear time progress (0–1); on physics steps it's the spring's progress and may overshoot past 1 mid-flight. It's the escape hatch for animating anything the engine doesn't write directly — canvas, WebGL uniforms, text counters, scroll position:
+
+```js
+scene().fromTo(counterEl, { '--n': '0' }, { '--n': '100' }, {
+  duration: 800,
+  onUpdate: (styles, p, el) => { el.textContent = Math.round(p * 100); },
+});
+```
 
 ### Easings
 
@@ -150,7 +182,7 @@ scene().stagger(targets, config, opts);
 ```
 
 - **targets** — `Element[]` / `NodeList` / selector string.
-- **config** — a step-config object, or a `(el, i) => config` function. Config keys: `from`, `to`, `keyframes`, `duration`, `easing`, `physics`, `delay`.
+- **config** — a step-config object, or a `(el, i) => config` function. Config keys: `from`, `to`, `keyframes`, `duration`, `easing`, `physics`, `delay`, `onUpdate`.
 - **opts** — `{ interval, jitter, from }`:
   - `interval` — ms between item starts (lazy ok). Item `i` starts at `rank(i) * interval`.
   - `jitter` — `0–1`, random ± fraction of `interval` applied per item.

@@ -11,6 +11,21 @@ import { writtenStyles } from './state.js';
 let _transformFallbackWarned = false;
 
 /**
+ * Write a style object onto an element, including CSS custom properties.
+ * @param {object} el
+ * @param {Object<string, string | number>} styles
+ */
+export function writeStyles(el, styles) {
+  for (const key in styles) {
+    if (key.startsWith('--') && typeof el.style.setProperty === 'function') {
+      el.style.setProperty(key, String(styles[key]));
+    } else {
+      el.style[key] = styles[key];
+    }
+  }
+}
+
+/**
  * Is this a real DOM element (as opposed to a plain test object)?
  * @param {*} el
  * @returns {boolean}

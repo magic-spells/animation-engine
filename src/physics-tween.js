@@ -10,6 +10,7 @@
  */
 
 import PhysicsEngine from '@magic-spells/physics-engine';
+import { writeStyles } from './dom.js';
 import { activeElementTweens, claimElement, recordStyles } from './state.js';
 
 export default class PhysicsTween {
@@ -19,12 +20,14 @@ export default class PhysicsTween {
    * @param {import('./frame-engine.js').default} config.frameEngine
    * @param {Object<string, string>} config.endStyles
    * @param {{ attraction?: number, friction?: number }} config.physics
+   * @param {(styles: Object<string, string>, progress: number, el: object) => void} [config.onUpdate]
    */
-  constructor({ el, frameEngine, endStyles, physics }) {
+  constructor({ el, frameEngine, endStyles, physics, onUpdate }) {
     this.el = el;
     this.fe = frameEngine;
     this.endStyles = endStyles;
     this.physics = physics || {};
+    this.onUpdate = onUpdate;
 
     this._done = false;
     this.engine = null;
@@ -47,7 +50,8 @@ export default class PhysicsTween {
     // No rAF (e.g. Node) — springs can't run; snap to the settled end state.
     if (typeof requestAnimationFrame !== 'function') {
       this._lastStyles = this.endStyles;
-      Object.assign(this.el.style, this.endStyles);
+      writeStyles(this.el, this.endStyles);
+      if (this.onUpdate) this.onUpdate(this.endStyles, 1, this.el);
       this._finish();
       return this.promise;
     }
@@ -68,7 +72,8 @@ export default class PhysicsTween {
     this.engine.animateTo(0, 1, 0).then(() => {
       if (this._done) return;
       this._lastStyles = this.endStyles;
-      Object.assign(this.el.style, this.endStyles);
+      writeStyles(this.el, this.endStyles);
+      if (this.onUpdate) this.onUpdate(this.endStyles, 1, this.el);
       this._finish();
     });
 
@@ -78,7 +83,8 @@ export default class PhysicsTween {
   _apply(progress) {
     const styles = this.fe.getFrame(progress);
     this._lastStyles = styles;
-    Object.assign(this.el.style, styles);
+    writeStyles(this.el, styles);
+    if (this.onUpdate) this.onUpdate(styles, progress, this.el);
   }
 
   _cleanup() {

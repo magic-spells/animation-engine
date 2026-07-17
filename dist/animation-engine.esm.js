@@ -118,18 +118,18 @@ function f(e, t, n) {
 function p(e) {
 	return () => e[Math.floor(Math.random() * e.length)];
 }
-function m(e) {
-	return typeof e == "function" ? e() : e;
+function m(e, t, n) {
+	return typeof e == "function" ? e(t, n) : e;
 }
-function h(e) {
-	let t = {};
-	for (let n in e) t[n] = m(e[n]);
-	return t;
+function h(e, t, n) {
+	let r = {};
+	for (let i in e) r[i] = m(e[i], t, n);
+	return r;
 }
-function g(e) {
-	let t = {};
-	for (let n in e) t[n] = h(e[n]);
-	return t;
+function g(e, t, n) {
+	let r = {};
+	for (let i in e) r[i] = h(e[i], t, n);
+	return r;
 }
 //#endregion
 //#region src/keyframes.js
@@ -177,16 +177,19 @@ function x(e, t) {
 //#endregion
 //#region src/dom.js
 var S = !1;
-function C(e) {
-	return typeof Element < "u" && e instanceof Element;
+function C(e, t) {
+	for (let n in t) n.startsWith("--") && typeof e.style.setProperty == "function" ? e.style.setProperty(n, String(t[n])) : e.style[n] = t[n];
 }
 function w(e) {
-	return e == null ? [] : typeof e == "string" ? typeof document < "u" && document.querySelectorAll ? Array.from(document.querySelectorAll(e)) : [] : Array.isArray(e) ? e : typeof e.length == "number" && typeof e != "function" && e.style === void 0 && e.nodeType === void 0 ? Array.from(e) : [e];
+	return typeof Element < "u" && e instanceof Element;
 }
 function T(e) {
+	return e == null ? [] : typeof e == "string" ? typeof document < "u" && document.querySelectorAll ? Array.from(document.querySelectorAll(e)) : [] : Array.isArray(e) ? e : typeof e.length == "number" && typeof e != "function" && e.style === void 0 && e.nodeType === void 0 ? Array.from(e) : [e];
+}
+function E(e) {
 	return e === "opacity" ? "1" : "0";
 }
-function E(e, t) {
+function D(e, t) {
 	let n = v.get(e), r = {};
 	for (let i in t) {
 		if (n && i in n) {
@@ -202,40 +205,40 @@ function E(e, t) {
 			S || (S = !0, console.warn("AnimationEngine: no tracked prior transform; first .to({transform}) will jump. Use .fromTo() or seed with .set() for a smooth first transform tween.")), r[i] = t[i];
 			continue;
 		}
-		if (C(e) && typeof getComputedStyle == "function") {
+		if (w(e) && typeof getComputedStyle == "function") {
 			let t = getComputedStyle(e)[i];
-			r[i] = t !== void 0 && t !== "" ? t : T(i);
+			r[i] = t !== void 0 && t !== "" ? t : E(i);
 			continue;
 		}
 		let a = e.style ? e.style[i] : void 0;
-		r[i] = a !== void 0 && a !== "" ? a : T(i);
+		r[i] = a !== void 0 && a !== "" ? a : E(i);
 	}
 	return r;
 }
 //#endregion
 //#region src/tween.js
-var D = class {
-	constructor({ el: e, frameEngine: t, endStyles: n, duration: r, easing: i, timeScale: a }) {
-		this.el = e, this.fe = t, this.endStyles = n, this.duration = r, this.easing = i, this.timeScale = a, this.elapsed = 0, this._done = !1, this._onTick = null, this._lastStyles = null, this.promise = new Promise((e) => {
+var O = class {
+	constructor({ el: e, frameEngine: t, endStyles: n, duration: r, easing: i, timeScale: a, onUpdate: o }) {
+		this.el = e, this.fe = t, this.endStyles = n, this.duration = r, this.easing = i, this.timeScale = a, this.onUpdate = o, this.elapsed = 0, this._done = !1, this._onTick = null, this._lastStyles = null, this.promise = new Promise((e) => {
 			this._resolve = e;
 		});
 	}
 	start() {
-		return y.get(this.el) !== this && b(this.el), y.set(this.el, this), this.duration <= 0 ? (this._lastStyles = this.endStyles, Object.assign(this.el.style, this.endStyles), this._finish(), this.promise) : (this._apply(0), this._onTick = (e) => this._tick(e), r.subscribe(this._onTick), this.promise);
+		return y.get(this.el) !== this && b(this.el), y.set(this.el, this), this.duration <= 0 ? (this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish(), this.promise) : (this._apply(0), this._onTick = (e) => this._tick(e), r.subscribe(this._onTick), this.promise);
 	}
 	_tick(e) {
 		if (this._done) return;
 		this.elapsed += e * this.timeScale();
 		let t = this.elapsed / this.duration;
 		if (t >= 1) {
-			this._lastStyles = this.endStyles, Object.assign(this.el.style, this.endStyles), this._finish();
+			this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish();
 			return;
 		}
 		this._apply(t);
 	}
 	_apply(e) {
 		let t = this.fe.getFrame(this.easing(e));
-		this._lastStyles = t, Object.assign(this.el.style, t);
+		this._lastStyles = t, C(this.el, t), this.onUpdate && this.onUpdate(t, e, this.el);
 	}
 	_cleanup() {
 		this._done = !0, this._onTick && r.unsubscribe(this._onTick), y.get(this.el) === this && y.delete(this.el);
@@ -246,9 +249,9 @@ var D = class {
 	cancel() {
 		this._done || (this._cleanup(), this._lastStyles && x(this.el, this._lastStyles), this._resolve());
 	}
-}, O = class {
-	constructor({ el: e, frameEngine: t, endStyles: n, physics: r }) {
-		this.el = e, this.fe = t, this.endStyles = n, this.physics = r || {}, this._done = !1, this.engine = null, this._onChange = null, this._lastStyles = null, this.promise = new Promise((e) => {
+}, k = class {
+	constructor({ el: e, frameEngine: t, endStyles: n, physics: r, onUpdate: i }) {
+		this.el = e, this.fe = t, this.endStyles = n, this.physics = r || {}, this.onUpdate = i, this._done = !1, this.engine = null, this._onChange = null, this._lastStyles = null, this.promise = new Promise((e) => {
 			this._resolve = e;
 		});
 	}
@@ -256,12 +259,12 @@ var D = class {
 		return y.get(this.el) !== this && b(this.el), y.set(this.el, this), typeof requestAnimationFrame == "function" ? (this.engine = new n(this.physics), this._onChange = ({ progress: e }) => {
 			this._done || this._apply(e);
 		}, this.engine.on("change", this._onChange), this._apply(0), this.engine.animateTo(0, 1, 0).then(() => {
-			this._done || (this._lastStyles = this.endStyles, Object.assign(this.el.style, this.endStyles), this._finish());
-		}), this.promise) : (this._lastStyles = this.endStyles, Object.assign(this.el.style, this.endStyles), this._finish(), this.promise);
+			this._done || (this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish());
+		}), this.promise) : (this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish(), this.promise);
 	}
 	_apply(e) {
 		let t = this.fe.getFrame(e);
-		this._lastStyles = t, Object.assign(this.el.style, t);
+		this._lastStyles = t, C(this.el, t), this.onUpdate && this.onUpdate(t, e, this.el);
 	}
 	_cleanup() {
 		this._done = !0, this.engine && this._onChange && this.engine.off("change", this._onChange), y.get(this.el) === this && y.delete(this.el);
@@ -272,11 +275,11 @@ var D = class {
 	cancel() {
 		this._done || (this._cleanup(), this.engine && this.engine.stop(), this._lastStyles && x(this.el, this._lastStyles), this._resolve());
 	}
-}, k = 400, A = "ease";
-function j() {
+}, A = 400, j = "ease";
+function M() {
 	return typeof matchMedia == "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
-function M(e) {
+function N(e) {
 	let t = {
 		to(n, r, i = {}) {
 			return e.push({
@@ -332,7 +335,7 @@ function M(e) {
 		},
 		parallel(n) {
 			let r = [];
-			return n(M(r)), e.push({
+			return n(N(r)), e.push({
 				type: "parallel",
 				substeps: r
 			}), t;
@@ -348,7 +351,7 @@ function M(e) {
 	};
 	return t;
 }
-function N(e, t) {
+function P(e, t) {
 	let n = Array.from({ length: e }, (e, t) => t), r;
 	if (t === void 0 || t === "start") r = n;
 	else if (t === "end") r = n.map((t) => e - 1 - t);
@@ -369,9 +372,9 @@ function N(e, t) {
 	let i = Math.min(...r);
 	return i > 0 ? r.map((e) => e - i) : r;
 }
-var P = class extends e {
+var F = class extends e {
 	constructor(e = {}) {
-		super(), this._steps = [], this._builder = M(this._steps), this._loop = e.loop ?? 1, this._loopDelay = e.loopDelay ?? 0, this._alternate = e.alternate ?? !1, this._defaults = e.defaults ?? {}, this._respectReducedMotion = e.respectReducedMotion ?? !0, this._onBegin = e.onBegin, this._onComplete = e.onComplete, this._onLoop = e.onLoop, this._timeScale = 1, this._playing = !1, this._current = null, this._playPromise = null;
+		super(), this._steps = [], this._builder = N(this._steps), this._loop = e.loop ?? 1, this._loopDelay = e.loopDelay ?? 0, this._alternate = e.alternate ?? !1, this._defaults = e.defaults ?? {}, this._respectReducedMotion = e.respectReducedMotion ?? !0, this._onBegin = e.onBegin, this._onComplete = e.onComplete, this._onLoop = e.onLoop, this._timeScale = 1, this._playing = !1, this._current = null, this._playPromise = null;
 	}
 	to(e, t, n) {
 		return this._builder.to(e, t, n), this;
@@ -429,7 +432,7 @@ var P = class extends e {
 		this._execute(e).then(() => this._settle(e, "complete"), (t) => this._fail(e, t));
 	}
 	async _execute(e) {
-		if (this.emit("begin"), this._onBegin && this._onBegin(), this._respectReducedMotion && j()) {
+		if (this.emit("begin"), this._onBegin && this._onBegin(), this._respectReducedMotion && M()) {
 			this._applyEndStates();
 			return;
 		}
@@ -468,77 +471,84 @@ var P = class extends e {
 		}
 	}
 	_applySet(e) {
-		let t = h(e.styles);
-		for (let n of w(e.target)) b(n), Object.assign(n.style, t), x(n, t);
+		T(e.target).forEach((t, n) => {
+			let r = h(e.styles, t, n);
+			b(t), C(t, r), x(t, r);
+		});
 	}
 	async _runTween(e, t, n) {
-		let r = w(e.target);
+		let r = T(e.target);
 		if (r.length === 0) return;
-		let i = e.opts || {}, a = !!i.physics, o = m(i.delay) || 0, s = a ? 0 : m(i.duration) ?? m(this._defaults.duration) ?? k, c = u(i.easing ?? this._defaults.easing ?? A), l = this._resolveStepValues(e);
+		let i = e.opts || {}, a = !!i.physics, o = m(i.delay) || 0, s = a ? 0 : m(i.duration) ?? m(this._defaults.duration) ?? A, c = u(i.easing ?? this._defaults.easing ?? j);
 		if (o > 0 && (await this._scaledWait(o, n).promise, n.stopped || n.finished)) return;
-		let d = r.map((r) => {
+		let l = r.map((r, o) => {
+			let l = this._resolveStepValues(e, r, o);
 			b(r);
-			let { fe: o, endStyles: u } = this._buildFrameEngine(e, r, t, l), d = a ? new O({
+			let { fe: u, endStyles: d } = this._buildFrameEngine(e, r, t, l), f = a ? new k({
 				el: r,
-				frameEngine: o,
-				endStyles: u,
-				physics: i.physics
-			}) : new D({
+				frameEngine: u,
+				endStyles: d,
+				physics: i.physics,
+				onUpdate: i.onUpdate
+			}) : new O({
 				el: r,
-				frameEngine: o,
-				endStyles: u,
+				frameEngine: u,
+				endStyles: d,
 				duration: s,
 				easing: c,
-				timeScale: () => this._timeScale
-			}), f = { cancel: () => d.cancel() };
-			return n.active.add(f), d.start().then(() => n.active.delete(f));
+				timeScale: () => this._timeScale,
+				onUpdate: i.onUpdate
+			}), p = { cancel: () => f.cancel() };
+			return n.active.add(p), f.start().then(() => n.active.delete(p));
 		});
-		await Promise.all(d);
+		await Promise.all(l);
 	}
 	async _runStagger(e, t, n) {
-		let r = w(e.targets);
+		let r = T(e.targets);
 		if (r.length === 0) return;
-		let i = e.staggerOpts || {}, a = m(i.interval) || 0, o = i.jitter || 0, s = N(r.length, i.from), c = r.map((r, i) => this._runStaggerItem(e, r, i, s[i], a, o, t, n));
+		let i = e.staggerOpts || {}, a = m(i.interval) || 0, o = i.jitter || 0, s = P(r.length, i.from), c = r.map((r, i) => this._runStaggerItem(e, r, i, s[i], a, o, t, n));
 		await Promise.all(c);
 	}
 	async _runStaggerItem(e, t, n, r, i, a, o, s) {
 		let c = typeof e.config == "function" ? e.config(t, n) : { ...e.config }, l = r * i + (m(c.delay) || 0);
 		if (a && (l += (Math.random() * 2 - 1) * a * i), l < 0 && (l = 0), l > 0 && (await this._scaledWait(l, s).promise, s.stopped || s.finished)) return;
-		let d = !!c.physics, f = d ? 0 : m(c.duration) ?? m(this._defaults.duration) ?? k, p = u(c.easing ?? this._defaults.easing ?? A);
+		let d = !!c.physics, f = d ? 0 : m(c.duration) ?? m(this._defaults.duration) ?? A, p = u(c.easing ?? this._defaults.easing ?? j);
 		b(t);
-		let { fe: h, endStyles: g } = this._buildFrameEngineFromConfig(c, t, o), _ = d ? new O({
+		let { fe: h, endStyles: g } = this._buildFrameEngineFromConfig(c, t, o, n), _ = d ? new k({
 			el: t,
 			frameEngine: h,
 			endStyles: g,
-			physics: c.physics
-		}) : new D({
+			physics: c.physics,
+			onUpdate: c.onUpdate
+		}) : new O({
 			el: t,
 			frameEngine: h,
 			endStyles: g,
 			duration: f,
 			easing: p,
-			timeScale: () => this._timeScale
+			timeScale: () => this._timeScale,
+			onUpdate: c.onUpdate
 		}), v = { cancel: () => _.cancel() };
 		s.active.add(v), await _.start(), s.active.delete(v);
 	}
-	_resolveStepValues(e) {
+	_resolveStepValues(e, t, n) {
 		switch (e.type) {
 			case "to":
-			case "from": return { styles: h(e.styles) };
+			case "from": return { styles: h(e.styles, t, n) };
 			case "fromTo": return {
-				fromStyles: h(e.fromStyles),
-				toStyles: h(e.toStyles)
+				fromStyles: h(e.fromStyles, t, n),
+				toStyles: h(e.toStyles, t, n)
 			};
-			case "frames": return { keyframes: _(g(e.keyframes)) };
+			case "frames": return { keyframes: _(g(e.keyframes, t, n)) };
 			default: return {};
 		}
 	}
 	_buildFrameEngine(e, n, r, i) {
 		let a;
-		if (e.type === "frames") a = r ? F(i.keyframes) : i.keyframes;
+		if (e.type === "frames") a = r ? I(i.keyframes) : i.keyframes;
 		else {
 			let t, o;
-			e.type === "to" ? (o = i.styles, t = E(n, o)) : e.type === "from" ? (t = i.styles, o = E(n, t)) : (t = i.fromStyles, o = i.toStyles), r && ([t, o] = [o, t]), a = {
+			e.type === "to" ? (o = i.styles, t = D(n, o)) : e.type === "from" ? (t = i.styles, o = D(n, t)) : (t = i.fromStyles, o = i.toStyles), r && ([t, o] = [o, t]), a = {
 				0: t,
 				100: o
 			};
@@ -549,22 +559,22 @@ var P = class extends e {
 			endStyles: o.getFrame(1)
 		};
 	}
-	_buildFrameEngineFromConfig(e, n, r) {
-		let i;
+	_buildFrameEngineFromConfig(e, n, r, i) {
+		let a;
 		if (e.keyframes) {
-			let t = _(g(e.keyframes));
-			i = r ? F(t) : t;
+			let t = _(g(e.keyframes, n, i));
+			a = r ? I(t) : t;
 		} else {
-			let t = e.from ? h(e.from) : null, a = e.to ? h(e.to) : null;
-			t && !a ? a = E(n, t) : !t && a ? t = E(n, a) : !t && !a && (t = {}, a = {}), r && ([t, a] = [a, t]), i = {
+			let t = e.from ? h(e.from, n, i) : null, o = e.to ? h(e.to, n, i) : null;
+			t && !o ? o = D(n, t) : !t && o ? t = D(n, o) : !t && !o && (t = {}, o = {}), r && ([t, o] = [o, t]), a = {
 				0: t,
-				100: a
+				100: o
 			};
 		}
-		let a = new t(i);
+		let o = new t(a);
 		return {
-			fe: a,
-			endStyles: a.getFrame(1)
+			fe: o,
+			endStyles: o.getFrame(1)
 		};
 	}
 	_applyEndStates() {
@@ -578,24 +588,23 @@ var P = class extends e {
 			case "to":
 			case "from":
 			case "fromTo":
-			case "frames": {
-				let t = this._resolveStepValues(e);
-				for (let n of w(e.target)) {
-					b(n);
-					let { endStyles: r } = this._buildFrameEngine(e, n, !1, t);
-					Object.assign(n.style, r), x(n, r);
-				}
+			case "frames":
+				T(e.target).forEach((t, n) => {
+					let r = this._resolveStepValues(e, t, n);
+					b(t);
+					let { endStyles: i } = this._buildFrameEngine(e, t, !1, r);
+					C(t, i), x(t, i), e.opts.onUpdate && e.opts.onUpdate(i, 1, t);
+				});
 				return;
-			}
 			case "parallel":
 				for (let t of e.substeps) this._applyStepEnd(t);
 				return;
 			case "stagger":
-				w(e.targets).forEach((t, n) => {
+				T(e.targets).forEach((t, n) => {
 					let r = typeof e.config == "function" ? e.config(t, n) : { ...e.config };
 					b(t);
-					let { endStyles: i } = this._buildFrameEngineFromConfig(r, t, !1);
-					Object.assign(t.style, i), x(t, i);
+					let { endStyles: i } = this._buildFrameEngineFromConfig(r, t, !1, n);
+					C(t, i), x(t, i), r.onUpdate && r.onUpdate(i, 1, t);
 				});
 				return;
 		}
@@ -641,20 +650,20 @@ var P = class extends e {
 	}
 	_collectElements(e = this._steps, t = []) {
 		for (let n of e) if (n.type === "parallel") this._collectElements(n.substeps, t);
-		else if (n.type === "stagger") for (let e of w(n.targets)) t.push(e);
-		else if (n.target !== void 0) for (let e of w(n.target)) t.push(e);
+		else if (n.type === "stagger") for (let e of T(n.targets)) t.push(e);
+		else if (n.target !== void 0) for (let e of T(n.target)) t.push(e);
 		return t;
 	}
 };
-function F(e) {
+function I(e) {
 	let t = {};
 	for (let n in e) t[100 - Number(n)] = e[n];
 	return t;
 }
 //#endregion
 //#region src/animation-engine.js
-function I(e) {
-	return new P(e);
+function L(e) {
+	return new F(e);
 }
 //#endregion
-export { P as Scene, o as cubicBezier, s as easings, _ as fillSparseKeyframes, p as pick, f as rand, u as resolveEasing, I as scene, r as ticker };
+export { F as Scene, o as cubicBezier, s as easings, _ as fillSparseKeyframes, p as pick, f as rand, u as resolveEasing, L as scene, r as ticker };

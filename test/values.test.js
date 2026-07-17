@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { rand, pick, resolveValue, resolveStyles } from '../src/values.js';
+import { rand, pick, resolveValue, resolveStyles, resolveKeyframes } from '../src/values.js';
 
 test('rand returns a lazy function producing numbers in range', () => {
   const r = rand(0, 10);
@@ -63,4 +63,19 @@ test('resolveValue calls functions and passes through plain values', () => {
 test('resolveStyles resolves each (possibly lazy) style value', () => {
   const out = resolveStyles({ opacity: 0, left: () => '10px', top: '2px' });
   assert.deepEqual(out, { opacity: 0, left: '10px', top: '2px' });
+});
+
+test('value resolvers forward the element and index to functions', () => {
+  const element = {};
+  const value = (receivedElement, receivedIndex) => {
+    assert.equal(receivedElement, element);
+    assert.equal(receivedIndex, 2);
+    return '30px';
+  };
+
+  assert.equal(resolveValue(value, element, 2), '30px');
+  assert.deepEqual(resolveStyles({ left: value }, element, 2), { left: '30px' });
+  assert.deepEqual(resolveKeyframes({ 100: { left: value } }, element, 2), {
+    100: { left: '30px' },
+  });
 });
