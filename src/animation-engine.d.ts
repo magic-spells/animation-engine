@@ -40,7 +40,9 @@ export type Lazy<T> = T | (() => T);
 
 /** Spring parameters for a physics step (0 < value < 1). */
 export interface PhysicsConfig {
+  /** Pull toward the target. Default 0.026. */
   attraction?: number;
+  /** Velocity damping per frame. Default 0.17 — lower bounces more. */
   friction?: number;
 }
 

@@ -26,7 +26,9 @@ export default class PhysicsTween {
     this.el = el;
     this.fe = frameEngine;
     this.endStyles = endStyles;
-    this.physics = physics || {};
+    // Default friction is 0.17 (bouncier than physics-engine's own 0.28);
+    // caller-provided values win. Attraction inherits the engine default.
+    this.physics = { friction: 0.17, ...physics };
     this.onUpdate = onUpdate;
 
     this._done = false;
