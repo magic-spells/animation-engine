@@ -69,7 +69,13 @@ export default class PhysicsTween {
 
     // A superseded animateTo resolves without a 'complete' event, so we rely on
     // the promise, never the event, to know we're finished.
-    this.engine.animateTo(0, 1, 0).then(() => {
+    // Range is 0→100, not 0→1: the engine's settle thresholds are absolute
+    // (|pos−target| < 0.01, |velocity| < 0.01), so in 0→1 space they trip at 1%
+    // of travel — visibly early. At 0→100 the cutoff is 0.01% of travel
+    // (sub-pixel) without the long dead tail a 0→1000 range adds before the
+    // promise resolves. The handler reads the normalized `progress`, so the
+    // range never leaks out of this call.
+    this.engine.animateTo(0, 100, 0).then(() => {
       if (this._done) return;
       this._lastStyles = this.endStyles;
       writeStyles(this.el, this.endStyles);

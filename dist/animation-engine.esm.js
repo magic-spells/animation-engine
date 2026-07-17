@@ -258,7 +258,7 @@ var O = class {
 	start() {
 		return y.get(this.el) !== this && b(this.el), y.set(this.el, this), typeof requestAnimationFrame == "function" ? (this.engine = new n(this.physics), this._onChange = ({ progress: e }) => {
 			this._done || this._apply(e);
-		}, this.engine.on("change", this._onChange), this._apply(0), this.engine.animateTo(0, 1, 0).then(() => {
+		}, this.engine.on("change", this._onChange), this._apply(0), this.engine.animateTo(0, 100, 0).then(() => {
 			this._done || (this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish());
 		}), this.promise) : (this._lastStyles = this.endStyles, C(this.el, this.endStyles), this.onUpdate && this.onUpdate(this.endStyles, 1, this.el), this._finish(), this.promise);
 	}
