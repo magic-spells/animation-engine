@@ -1,7 +1,9 @@
 /**
  * A physics-driven tween: same interface as Tween, but progress comes from a
- * PhysicsEngine spring instead of a clock. A spring has no duration — it
- * finishes when it settles — so this completes on the engine's settle promise.
+ * registered spring implementation instead of a clock. The sequencer owns the
+ * spring contract; consumers inject its implementation with registerPhysics.
+ * A spring has no duration — it finishes when it settles — so this completes
+ * on the engine's settle promise.
  *
  * The spring's emitted `change.progress` is mapped straight into `getFrame`.
  * Progress overshoots past 1 mid-flight; that's desired — frame-engine
@@ -9,8 +11,8 @@
  * spring runs on its own internal clock).
  */
 
-import PhysicsEngine from '@magic-spells/physics-engine';
 import { writeStyles } from './dom.js';
+import { getPhysicsEngine } from './physics-registry.js';
 import { activeElementTweens, claimElement, recordStyles } from './state.js';
 
 export default class PhysicsTween {
@@ -23,6 +25,12 @@ export default class PhysicsTween {
    * @param {(styles: Object<string, string>, progress: number, el: object) => void} [config.onUpdate]
    */
   constructor({ el, frameEngine, endStyles, physics, onUpdate }) {
+    if (!getPhysicsEngine()) {
+      throw new Error(
+        'Physics step requires registerPhysics(PhysicsEngine) — install @magic-spells/physics-engine and register it once.'
+      );
+    }
+
     this.el = el;
     this.fe = frameEngine;
     this.endStyles = endStyles;
@@ -58,7 +66,7 @@ export default class PhysicsTween {
       return this.promise;
     }
 
-    this.engine = new PhysicsEngine(this.physics);
+    this.engine = new (getPhysicsEngine())(this.physics);
     this._onChange = ({ progress }) => {
       if (this._done) return;
       this._apply(progress);

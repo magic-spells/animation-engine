@@ -1006,7 +1006,9 @@
       </div>
       <details class="code-aside">
         <summary>view the scene()</summary>
-        <pre><code><span class="cm">// The chase's own spring — snappier than the compare demo's sliders</span>
+        <pre><code>AnimationEngine.<span class="fn">registerPhysics</span>(PhysicsEngine);
+
+<span class="cm">// The chase's own spring — snappier than the compare demo's sliders</span>
 <span class="kw">const</span> CHASE_SPRING = { <span class="prop">attraction</span>: <span class="num">0.08</span>, <span class="prop">friction</span>: <span class="num">0.14</span> };
 
 <span class="fn">scene</span>()
@@ -1326,10 +1328,13 @@ draw
     <p><span id="scene-count">0</span> looping scenes on one shared ticker · <a href="https://github.com/magic-spells/animation-engine" target="_blank" rel="noopener">@magic-spells/animation-engine</a></p>
   </footer>
 
-  <!-- UMD build: self-contained, so this page works as static files on GitHub Pages.
+  <!-- UMD core + vendored spring implementation keep this static on GitHub Pages.
        Run `npm run build` (or `npm run prod` to watch) after editing src/. -->
   <script src="../dist/animation-engine.min.js"></script>
+  <script src="./vendor/physics-engine.min.js"></script>
   <script type="module">
+    AnimationEngine.registerPhysics(PhysicsEngine);
+
     const { scene, rand, pick } = AnimationEngine;
 
     const $ = (sel, root = document) => root.querySelector(sel);

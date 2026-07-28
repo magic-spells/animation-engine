@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { scene } from '../src/animation-engine.js';
+import PhysicsEngine from '@magic-spells/physics-engine';
+
+import { registerPhysics, scene } from '../src/animation-engine.js';
 import ticker from '../src/ticker.js';
+
+registerPhysics(PhysicsEngine);
 
 // ---- Fake-time helpers ------------------------------------------------------
 // The ticker exposes no real rAF in Node, so we drive it by hand. `flush` lets

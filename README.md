@@ -2,10 +2,10 @@
 
 Declarative animation sequencing engine — chainable scenes with easing, physics, staggers, loops and randomness for the magic-spells ecosystem.
 
-It composes the ecosystem's two interpolation primitives and fills the gap between them:
+It composes an interpolation primitive with an optional spring implementation and fills the gap between them:
 
 - [`@magic-spells/frame-engine`](https://www.npmjs.com/package/@magic-spells/frame-engine) — pure `getFrame(pos)` → interpolated CSS. No clock, no easing, no lifecycle. Extrapolates outside 0–1, so spring overshoot styles itself for free.
-- [`@magic-spells/physics-engine`](https://www.npmjs.com/package/@magic-spells/physics-engine) — a spring that _produces_ progress over time.
+- [`@magic-spells/physics-engine`](https://www.npmjs.com/package/@magic-spells/physics-engine) — an optional implementation of animation-engine's spring contract, injected with `registerPhysics`.
 
 animation-engine owns everything neither has: **time, easing, sequencing, repetition, randomness, lifecycle.** Per frame it does `elapsed → eased progress → getFrame(progress) → Object.assign(el.style, styles)`.
 
@@ -15,7 +15,7 @@ A Scene is an **async chain** (run step → await completion → next), not a fi
 
 ## Size & scope
 
-**5.8 kB** gzipped (ESM — the two engine deps install alongside via npm) · **10.8 kB** gzipped fully self-contained (UMD, script-tag ready).
+**6.0 kB** gzipped (ESM core — frame-engine and event-emitter install alongside via npm) · **10.4 kB** gzipped (UMD core, script-tag ready). The optional spring implementation is installed and injected separately.
 
 That number is small because the scope is deliberate. You get sequencing, springs, staggers, loops, lazy randomness, and interruption handling. You do **not** get a scrubbing playhead — so no `seek()`, `pause()`/`resume()`, mid-flight `reverse()`, or scroll-linked animation — and no SVG toolkit (line drawing, motion paths, morphing) or draggables. If your project leans on those, reach for GSAP or anime.js; they're excellent at exactly the things this engine trades away for springs and size.
 
@@ -144,15 +144,20 @@ clamp to its first/last value.
 
 ### Physics steps
 
-Pass `physics` instead of `duration`/`easing` and the step's progress is driven by a `PhysicsEngine` spring: its emitted `change.progress` is mapped straight into `getFrame` (overshoot past 1 is desired and extrapolates), and the step completes on the spring's settle promise. Both parameters are optional — defaults are `attraction: 0.026`, `friction: 0.17`.
+Install a spring implementation separately, register it once, then pass `physics` instead of `duration`/`easing`. The step's progress is driven by the registered spring: its emitted `change.progress` is mapped straight into `getFrame` (overshoot past 1 is desired and extrapolates), and the step completes on the spring's settle promise. Both parameters are optional — defaults are `attraction: 0.026`, `friction: 0.17`.
 
 ```js
+import PhysicsEngine from '@magic-spells/physics-engine';
+import { registerPhysics, scene } from '@magic-spells/animation-engine';
+
+registerPhysics(PhysicsEngine);
+
 scene().fromTo(el, { transform: 'translateX(0px)' }, { transform: 'translateX(300px)' }, {
   physics: { attraction: 0.05, friction: 0.2 },
 });
 ```
 
-Note: physics steps ignore `timeScale` (the spring runs on its own internal clock) and, being duration-less, cannot be given a fixed length. For a springy _but sequenceable and time-boxed_ feel, use an overshoot easing (`'back-out'`, `'elastic-out'`) on a normal timed step instead.
+If a physics step starts before a spring implementation is registered, tween construction throws with setup instructions. Physics steps ignore `timeScale` (the spring runs on its own internal clock) and, being duration-less, cannot be given a fixed length. For a springy _but sequenceable and time-boxed_ feel, use an overshoot easing (`'back-out'`, `'elastic-out'`) on a normal timed step instead.
 
 ### onUpdate — driving things that aren't `el.style`
 

@@ -6,8 +6,8 @@ Declarative animation sequencing engine. Builds chainable "scenes" — sequences
 waits, parallel groups and staggers on DOM elements — with easing or spring physics,
 loops, and lazy randomness. Composes the ecosystem's two interpolation primitives:
 `@magic-spells/frame-engine` (progress → interpolated CSS styles) and
-`@magic-spells/physics-engine` (a spring producing progress over time). This package owns
-everything neither has: time, easing, sequencing, repetition, randomness, lifecycle.
+an optional, injected implementation of its spring contract. This package owns everything
+neither has: time, easing, sequencing, repetition, randomness, lifecycle.
 
 ## Architecture
 
@@ -28,6 +28,13 @@ frame-engine's extrapolation — that's a feature.
 **Tweens paint their 0% frame synchronously at `start()`** (both Tween and PhysicsTween).
 Without this the first painted frame is one tick into the animation — a visible pop-in on
 looping fade-ins. Don't remove it.
+
+**Physics is an injected spring implementation.** The sequencer defines the pluggable spring
+contract and consumers inject an implementation such as `@magic-spells/physics-engine` once
+through `registerPhysics`; `PhysicsTween`, the sequencing adapter, stays in core. A
+`{ physics }` step with nothing registered throws loudly at tween-construction time, before
+environment-specific start behavior can run. The physics-engine dependency edge is deleted
+from runtime dependencies and retained only as a dev dependency for tests and the demo.
 
 **Sparse keyframes are normalized before reaching frame-engine**
 (`src/keyframes.js:fillSparseKeyframes`). Raw frame-engine anchors a property that's
@@ -56,6 +63,7 @@ iteration boundary and stop when every element target is disconnected from the D
 
 - `src/scene.js` — builder + async scheduler (loop/alternate, parallel, stagger, waits)
 - `src/tween.js` / `src/physics-tween.js` — atomic per-element tweens (same interface)
+- `src/physics-registry.js` — injected spring constructor registration seam
 - `src/ticker.js` — shared rAF singleton, manual `tick()` for tests
 - `src/easings.js` — named easings + cubic-bezier solver (Newton-Raphson + bisection)
 - `src/keyframes.js` — sparse-keyframe fill (CSS semantics)
@@ -72,9 +80,10 @@ iteration boundary and stop when every element target is disconnected from the D
 - `npm test` — Node built-in test runner over `test/*.test.js` (all deterministic; fake
   time via `ticker.tick`)
 - `npm run build` — TWO Vite passes keyed off `BUILD_FORMAT`: `es` (externalizes
-  `@magic-spells/*` deps — consumers get them via npm) then `umd` (self-contained
-  `dist/animation-engine.min.js`, global `AnimationEngine`). Keep the split; bundling deps
-  into the ESM duplicates frame-engine for projects that already use it.
+  frame-engine and event-emitter — consumers get them via npm) then `umd` (bundles those
+  core dependencies into `dist/animation-engine.min.js`, global `AnimationEngine`). Keep
+  the split; bundling deps into the ESM duplicates frame-engine for projects that already
+  use it. Spring implementations are injected separately in both formats.
 
 ## Demo & GitHub Pages
 
@@ -88,9 +97,10 @@ git) — don't "clean up" the repo by re-ignoring it without first adding a Page
 builds.
 
 **The demo loads `dist/animation-engine.min.js` via script tag** (global `AnimationEngine`),
-not `../src/`. It must: `src/` bare-imports three `@magic-spells/*` deps, which a static host
-can't resolve — only the UMD is self-contained. This is why animation-engine's demo differs
-from frame-engine's, whose dependency-free `src/` can be imported directly.
+plus the vendored optional physics implementation, then calls `registerPhysics`. It does
+not load `../src/`: the source bare-imports two `@magic-spells/*` runtime dependencies that
+a static host can't resolve. This is why animation-engine's demo differs from frame-engine's,
+whose dependency-free `src/` can be imported directly.
 
 So: **`src/` edits are invisible to the demo (locally AND deployed) until `npm run build`,
 and invisible on Pages until `dist/` is committed.** Rebuild + commit `dist/` alongside any

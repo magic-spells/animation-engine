@@ -46,6 +46,17 @@ export interface PhysicsConfig {
   friction?: number;
 }
 
+/** The spring instance surface consumed by physics-driven tweens. */
+export interface SpringEngine {
+  on(event: 'change', listener: (event: { progress: number }) => void): void;
+  off(event: 'change', listener: (event: { progress: number }) => void): void;
+  animateTo(from: number, to: number, velocity: number): Promise<unknown>;
+  stop(): void;
+}
+
+/** A constructable implementation of the animation-engine spring contract. */
+export type SpringEngineConstructor = new (config?: PhysicsConfig) => SpringEngine;
+
 /** Per-step options. `physics` replaces `duration` + `easing`. */
 export interface StepOptions {
   duration?: Lazy<number>;
@@ -162,6 +173,9 @@ export interface Ticker {
 
 /** Create a new Scene. */
 export function scene(options?: SceneOptions): Scene;
+
+/** Register the spring implementation used by physics steps. */
+export function registerPhysics(engine: SpringEngineConstructor): void;
 
 /** A lazy random in [min, max). With a unit, returns a `${value}${unit}` string. */
 export function rand(min: number, max: number, unit: string): () => string;

@@ -43,7 +43,6 @@ if (format === 'es') {
   config.build.rollupOptions = {
     external: [
       '@magic-spells/frame-engine',
-      '@magic-spells/physics-engine',
       '@magic-spells/event-emitter',
     ],
   };
