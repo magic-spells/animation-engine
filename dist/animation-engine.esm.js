@@ -32,7 +32,7 @@ var n = new class {
 	}
 	#s = (e) => {
 		if (!this.#t) return;
-		let t = Math.min(e - this.#n, 64);
+		let t = Math.max(0, Math.min(e - this.#n, 64));
 		this.#n = e, this.tick(t), this.#t && this.hasRAF && (this.#r = requestAnimationFrame(this.#s));
 	};
 }(), r = 1.70158, i = r * 1.525;
