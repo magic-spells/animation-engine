@@ -18,7 +18,9 @@ syntax. Playback surface is `play()` (promise), `stop()` (freeze), `finish()` (j
 states), `timeScale(n)`.
 
 **One shared ticker.** A single rAF loop (`src/ticker.js`) drives every time-based tween.
-Delta is clamped to 64ms so backgrounded tabs pause rather than teleport. In Node (no rAF)
+Delta is clamped to [0, 64]ms: the high end so backgrounded tabs pause rather
+than teleport, the low end because an idle/occluded page's first rAF timestamp can predate
+the subscribe-time seed and would otherwise tick time backwards. In Node (no rAF)
 the loop never self-schedules; tests drive it manually via `ticker.tick(ms)`.
 
 **Per-tick pipeline**: elapsed → eased progress → `frameEngine.getFrame(progress)` →

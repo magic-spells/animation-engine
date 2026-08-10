@@ -1,6 +1,6 @@
 {
   "name": "@magic-spells/animation-engine",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Declarative animation sequencing engine — chainable scenes with easing, physics, staggers, loops and randomness for the magic-spells ecosystem",
   "type": "module",
   "sideEffects": false,

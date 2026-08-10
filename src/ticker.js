@@ -89,8 +89,11 @@ class Ticker {
 
   #loop = (time) => {
     if (!this.#running) return;
-    // Clamp to 64ms so a backgrounded tab pauses rather than teleporting on return.
-    const delta = Math.min(time - this.#lastTime, 64);
+    // Clamp to [0, 64]ms. The high end makes a backgrounded tab pause rather
+    // than teleport on return; the low end discards first-frame timestamps that
+    // predate the subscribe-time seed (idle/occluded pages hand out rAF times
+    // from before `#start()` ran), which would otherwise tick time backwards.
+    const delta = Math.max(0, Math.min(time - this.#lastTime, 64));
     this.#lastTime = time;
     this.tick(delta);
     if (this.#running && this.hasRAF) this.#rafId = requestAnimationFrame(this.#loop);
