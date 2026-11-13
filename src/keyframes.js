@@ -15,7 +15,7 @@
  * an authored `none` end value survives to the completing write.
  */
 
-import FrameEngine from "@magic-spells/frame-engine";
+import FrameEngine from '@magic-spells/frame-engine';
 
 /**
  * Fill missing properties at each keyframe with per-property interpolated
@@ -59,14 +59,9 @@ export function fillSparseKeyframes(keyframes) {
     const fe = new FrameEngine(mini);
 
     for (const pct of pcts) {
-      if (out[pct][prop] === undefined) {
-        out[pct][prop] =
-          pct < lo
-            ? keyframes[lo][prop]
-            : pct > hi
-              ? keyframes[hi][prop]
-              : fe.getFrame(pct / 100)[prop];
-      }
+      if (out[pct][prop] !== undefined) continue;
+      out[pct][prop] =
+        pct < lo ? keyframes[lo][prop] : pct > hi ? keyframes[hi][prop] : fe.getFrame(pct / 100)[prop];
     }
   }
 
