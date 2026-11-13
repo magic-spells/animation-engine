@@ -27,12 +27,10 @@ the loop never self-schedules; tests drive it manually via `ticker.tick(ms)`.
 `Object.assign(el.style, styles)`. Overshoot easings (back/elastic) exceed 1 and rely on
 frame-engine's extrapolation — that's a feature.
 
-**The completing write is `endStyles`, made once in `scene.js:buildFrames`**: `getFrame(1)`
+**The completing write is `endStyles`, made once in `scene.js:buildFrames`**: `getFrame(1)`,
 with any property the final keyframe authors as `none` kept verbatim (frame-engine emits
 identity functions such as `translateY(0px)`, which keep a stacking context alive and broke
-`backdrop-filter` in Chrome). Tween, PhysicsTween, `finish()` and the recorded from-state all
-read it; every earlier write stays interpolated. Not the whole final keyframe verbatim:
-getFrame also holds properties missing from that keyframe and clamps ranges.
+`backdrop-filter` in Chrome). Every earlier write stays interpolated.
 
 **Tweens paint their 0% frame synchronously at `start()`** (both Tween and PhysicsTween).
 Without this the first painted frame is one tick into the animation — a visible pop-in on

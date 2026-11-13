@@ -145,17 +145,10 @@ function g(e) {
 	for (let t of n) a[t] = { ...e[t] };
 	for (let [i, o] of r) {
 		if (o.length === n.length) continue;
-		let r = o[0], s = o[o.length - 1], c;
-		if (o.length === 1) {
-			let t = e[r][i];
-			c = () => t;
-		} else {
-			let n = {};
-			for (let t of o) n[t] = { [i]: e[t][i] };
-			let a = new t(n);
-			c = (e) => a.getFrame(Math.min(Math.max(e, r), s) / 100)[i];
-		}
-		for (let e of n) a[e][i] === void 0 && (a[e][i] = c(e));
+		let r = o[0], s = o[o.length - 1], c = {};
+		for (let t of o) c[t] = { [i]: e[t][i] };
+		let l = new t(c);
+		for (let t of n) a[t][i] === void 0 && (a[t][i] = t < r ? e[r][i] : t > s ? e[s][i] : l.getFrame(t / 100)[i]);
 	}
 	return a;
 }

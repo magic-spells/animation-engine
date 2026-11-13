@@ -11,10 +11,11 @@
  * The fill uses frame-engine's own math: for each sparsely-specified property,
  * a mini single-property FrameEngine is built over only the keys that specify
  * it, then sampled at every other key position. Positions outside the
- * property's specified range clamp to its first/last value.
+ * property's specified range hold its first/last authored value verbatim, so
+ * an authored `none` end value survives to the completing write.
  */
 
-import FrameEngine from '@magic-spells/frame-engine';
+import FrameEngine from "@magic-spells/frame-engine";
 
 /**
  * Fill missing properties at each keyframe with per-property interpolated
@@ -53,21 +54,19 @@ export function fillSparseKeyframes(keyframes) {
 
     const lo = keys[0];
     const hi = keys[keys.length - 1];
-    let sample;
-
-    if (keys.length === 1) {
-      // Specified once — constant everywhere.
-      const value = keyframes[lo][prop];
-      sample = () => value;
-    } else {
-      const mini = {};
-      for (const p of keys) mini[p] = { [prop]: keyframes[p][prop] };
-      const fe = new FrameEngine(mini);
-      sample = (pct) => fe.getFrame(Math.min(Math.max(pct, lo), hi) / 100)[prop];
-    }
+    const mini = {};
+    for (const p of keys) mini[p] = { [prop]: keyframes[p][prop] };
+    const fe = new FrameEngine(mini);
 
     for (const pct of pcts) {
-      if (out[pct][prop] === undefined) out[pct][prop] = sample(pct);
+      if (out[pct][prop] === undefined) {
+        out[pct][prop] =
+          pct < lo
+            ? keyframes[lo][prop]
+            : pct > hi
+              ? keyframes[hi][prop]
+              : fe.getFrame(pct / 100)[prop];
+      }
     }
   }
 
