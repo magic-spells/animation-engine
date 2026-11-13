@@ -20,7 +20,7 @@ export default class PhysicsTween {
    * @param {Object} config
    * @param {object} config.el
    * @param {import('./frame-engine.js').default} config.frameEngine
-   * @param {Object<string, string>} config.endStyles
+   * @param {Object<string, string>} config.endStyles - Completing write (getFrame(1), authored `none` kept).
    * @param {{ attraction?: number, friction?: number }} config.physics
    * @param {(styles: Object<string, string>, progress: number, el: object) => void} [config.onUpdate]
    */

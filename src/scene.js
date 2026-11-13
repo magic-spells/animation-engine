@@ -34,6 +34,21 @@ function prefersReducedMotion() {
 }
 
 /**
+ * Build a FrameEngine and the end styles a completed tween writes: the frame at
+ * 1, except a property the final keyframe authors as `none` stays `none`.
+ * frame-engine emits identity functions there (`translateY(0px)`, `blur(0px)`),
+ * which would leave a stacking context or backdrop root behind for good.
+ * @returns {{ fe: FrameEngine, endStyles: Object<string, string> }}
+ */
+function buildFrames(keyframes) {
+  const fe = new FrameEngine(keyframes);
+  const endStyles = fe.getFrame(1);
+  const last = keyframes[Math.max(...Object.keys(keyframes))];
+  for (const prop in last) if (last[prop] === 'none') endStyles[prop] = 'none';
+  return { fe, endStyles };
+}
+
+/**
  * Build a plain-object step builder that pushes into `steps`. Shared by the
  * Scene itself and by `.parallel()` sub-builders so the API is identical.
  * @param {object[]} steps
@@ -539,8 +554,7 @@ export default class Scene extends EventEmitter {
       keyframes = { 0: fromStyles, 100: toStyles };
     }
 
-    const fe = new FrameEngine(keyframes);
-    return { fe, endStyles: fe.getFrame(1) };
+    return buildFrames(keyframes);
   }
 
   /**
@@ -568,8 +582,7 @@ export default class Scene extends EventEmitter {
       keyframes = { 0: fromStyles, 100: toStyles };
     }
 
-    const fe = new FrameEngine(keyframes);
-    return { fe, endStyles: fe.getFrame(1) };
+    return buildFrames(keyframes);
   }
 
   // ---- Finish / reduced-motion end states ----

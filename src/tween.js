@@ -17,7 +17,7 @@ export default class Tween {
    * @param {Object} config
    * @param {object} config.el - Element (or {style} test object) to animate.
    * @param {import('./frame-engine.js').default} config.frameEngine - Prebuilt FrameEngine.
-   * @param {Object<string, string>} config.endStyles - getFrame(1), for recording + finish.
+   * @param {Object<string, string>} config.endStyles - Completing write (getFrame(1), authored `none` kept), for recording + finish.
    * @param {number} config.duration - Duration in ms (<= 0 completes instantly).
    * @param {(t: number) => number} config.easing - Eased progress function.
    * @param {() => number} config.timeScale - Reads the owning scene's rate multiplier.

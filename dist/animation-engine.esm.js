@@ -292,6 +292,14 @@ function P() {
 	return typeof matchMedia == "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 function F(e) {
+	let n = new t(e), r = n.getFrame(1), i = e[Math.max(...Object.keys(e))];
+	for (let e in i) i[e] === "none" && (r[e] = "none");
+	return {
+		fe: n,
+		endStyles: r
+	};
+}
+function I(e) {
 	let t = {
 		to(n, r, i = {}) {
 			return e.push({
@@ -347,7 +355,7 @@ function F(e) {
 		},
 		parallel(n) {
 			let r = [];
-			return n(F(r)), e.push({
+			return n(I(r)), e.push({
 				type: "parallel",
 				substeps: r
 			}), t;
@@ -363,7 +371,7 @@ function F(e) {
 	};
 	return t;
 }
-function I(e, t) {
+function L(e, t) {
 	let n = Array.from({ length: e }, (e, t) => t), r;
 	if (t === void 0 || t === "start") r = n;
 	else if (t === "end") r = n.map((t) => e - 1 - t);
@@ -384,9 +392,9 @@ function I(e, t) {
 	let i = Math.min(...r);
 	return i > 0 ? r.map((e) => e - i) : r;
 }
-var L = class extends e {
+var R = class extends e {
 	constructor(e = {}) {
-		super(), this._steps = [], this._builder = F(this._steps), this._loop = e.loop ?? 1, this._loopDelay = e.loopDelay ?? 0, this._alternate = e.alternate ?? !1, this._defaults = e.defaults ?? {}, this._respectReducedMotion = e.respectReducedMotion ?? !0, this._onBegin = e.onBegin, this._onComplete = e.onComplete, this._onLoop = e.onLoop, this._timeScale = 1, this._playing = !1, this._current = null, this._playPromise = null;
+		super(), this._steps = [], this._builder = I(this._steps), this._loop = e.loop ?? 1, this._loopDelay = e.loopDelay ?? 0, this._alternate = e.alternate ?? !1, this._defaults = e.defaults ?? {}, this._respectReducedMotion = e.respectReducedMotion ?? !0, this._onBegin = e.onBegin, this._onComplete = e.onComplete, this._onLoop = e.onLoop, this._timeScale = 1, this._playing = !1, this._current = null, this._playPromise = null;
 	}
 	to(e, t, n) {
 		return this._builder.to(e, t, n), this;
@@ -518,7 +526,7 @@ var L = class extends e {
 	async _runStagger(e, t, n) {
 		let r = w(e.targets);
 		if (r.length === 0) return;
-		let i = e.staggerOpts || {}, a = p(i.interval) || 0, o = i.jitter || 0, s = I(r.length, i.from), c = r.map((r, i) => this._runStaggerItem(e, r, i, s[i], a, o, t, n));
+		let i = e.staggerOpts || {}, a = p(i.interval) || 0, o = i.jitter || 0, s = L(r.length, i.from), c = r.map((r, i) => this._runStaggerItem(e, r, i, s[i], a, o, t, n));
 		await Promise.all(c);
 	}
 	async _runStaggerItem(e, t, n, r, i, a, o, s) {
@@ -555,39 +563,31 @@ var L = class extends e {
 			default: return {};
 		}
 	}
-	_buildFrameEngine(e, n, r, i) {
-		let a;
-		if (e.type === "frames") a = r ? R(i.keyframes) : i.keyframes;
+	_buildFrameEngine(e, t, n, r) {
+		let i;
+		if (e.type === "frames") i = n ? z(r.keyframes) : r.keyframes;
 		else {
-			let t, o;
-			e.type === "to" ? (o = i.styles, t = E(n, o)) : e.type === "from" ? (t = i.styles, o = E(n, t)) : (t = i.fromStyles, o = i.toStyles), r && ([t, o] = [o, t]), a = {
-				0: t,
+			let a, o;
+			e.type === "to" ? (o = r.styles, a = E(t, o)) : e.type === "from" ? (a = r.styles, o = E(t, a)) : (a = r.fromStyles, o = r.toStyles), n && ([a, o] = [o, a]), i = {
+				0: a,
 				100: o
 			};
 		}
-		let o = new t(a);
-		return {
-			fe: o,
-			endStyles: o.getFrame(1)
-		};
+		return F(i);
 	}
-	_buildFrameEngineFromConfig(e, n, r, i) {
-		let a;
+	_buildFrameEngineFromConfig(e, t, n, r) {
+		let i;
 		if (e.keyframes) {
-			let t = g(h(e.keyframes, n, i));
-			a = r ? R(t) : t;
+			let a = g(h(e.keyframes, t, r));
+			i = n ? z(a) : a;
 		} else {
-			let t = e.from ? m(e.from, n, i) : null, o = e.to ? m(e.to, n, i) : null;
-			t && !o ? o = E(n, t) : !t && o ? t = E(n, o) : !t && !o && (t = {}, o = {}), r && ([t, o] = [o, t]), a = {
-				0: t,
+			let a = e.from ? m(e.from, t, r) : null, o = e.to ? m(e.to, t, r) : null;
+			a && !o ? o = E(t, a) : !a && o ? a = E(t, o) : !a && !o && (a = {}, o = {}), n && ([a, o] = [o, a]), i = {
+				0: a,
 				100: o
 			};
 		}
-		let o = new t(a);
-		return {
-			fe: o,
-			endStyles: o.getFrame(1)
-		};
+		return F(i);
 	}
 	_applyEndStates() {
 		for (let e of this._steps) this._applyStepEnd(e);
@@ -667,15 +667,15 @@ var L = class extends e {
 		return t;
 	}
 };
-function R(e) {
+function z(e) {
 	let t = {};
 	for (let n in e) t[100 - Number(n)] = e[n];
 	return t;
 }
 //#endregion
 //#region src/animation-engine.js
-function z(e) {
-	return new L(e);
+function B(e) {
+	return new R(e);
 }
 //#endregion
-export { L as Scene, a as cubicBezier, o as easings, g as fillSparseKeyframes, f as pick, d as rand, k as registerPhysics, l as resolveEasing, z as scene, n as ticker };
+export { R as Scene, a as cubicBezier, o as easings, g as fillSparseKeyframes, f as pick, d as rand, k as registerPhysics, l as resolveEasing, B as scene, n as ticker };

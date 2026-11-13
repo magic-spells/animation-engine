@@ -288,6 +288,7 @@ scene()
 - **First `.to()` on a transform.** A usable inline functional transform is used as the from-state. Otherwise, with no tracked prior state, the engine would have to read computed style — and computed `transform` serialises to a `matrix(...)`, which cannot be interpolated against transform functions. In that case the transform is treated as a discrete jump (it snaps to the target). Seed the first transform with `.set()` or use `.fromTo()` for a smooth first transform tween.
 - **Interrupts (last write wins).** Starting a new tween or applying `.set()`/an immediate end-state on an element cancels any tween already running on it. The cancelled tween records its visible state before the new owner reads or writes the element; its scene then proceeds. Tracked across scenes via a module-level `WeakMap`.
 - **Detached nodes.** At each loop boundary, if every element target is `isConnected === false`, the scene stops — preventing leaked forever-loops on removed nodes.
+- **Ending on `none`.** A property whose final value is authored as `none` (`transform`, `filter`, `backdrop-filter`, …) tweens as identity and is written as `none` once the step completes (or on `.finish()`), so no `translateY(0px)` lingers to hold a stacking context. A stopped tween keeps its interpolated value.
 - **Reduced motion.** With `respectReducedMotion` (default `true`), `prefers-reduced-motion: reduce` makes `.play()` apply each step's end state instantly for a single iteration, then resolve.
 
 ## Commands
